@@ -1,35 +1,54 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import AdaptiveStudentPlatform from './test.jsx';
+import Signup from './components/Signup';
+import StudentLogin from './components/StudentLogin';
+import TeacherLogin from './components/TeacherLogin';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const [authView, setAuthView] = useState('student-login'); // default to student login
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+  const handleLogin = (role) => {
+    setIsLoggedIn(true);
+    setUserRole(role);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUserRole(null);
+    setAuthView('student-login');
+  };
+
+  const switchToSignup = () => setAuthView('signup');
+  const switchToStudentLogin = () => setAuthView('student-login');
+  const switchToTeacherLogin = () => setAuthView('teacher-login');
+
+  if (!isLoggedIn) {
+    return (
+      <div data-page="auth">
+        {authView === 'signup' && (
+          <Signup onSwitchToLogin={switchToStudentLogin} />
+        )}
+        {authView === 'student-login' && (
+          <StudentLogin
+            onLogin={handleLogin}
+            onSwitchToSignup={switchToSignup}
+            onSwitchToTeacherLogin={switchToTeacherLogin}
+          />
+        )}
+        {authView === 'teacher-login' && (
+          <TeacherLogin
+            onLogin={handleLogin}
+            onSwitchToSignup={switchToSignup}
+            onSwitchToStudentLogin={switchToStudentLogin}
+          />
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    );
+  }
+
+  return <AdaptiveStudentPlatform userRole={userRole} onLogout={handleLogout} />;
 }
 
-export default App
+export default App;
