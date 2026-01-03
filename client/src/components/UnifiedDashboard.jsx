@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Clock,
   Play,
@@ -6,7 +7,7 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronUp,
-  Settings,
+  User,
   Sun,
   Moon,
   Zap,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 const UnifiedDashboard = ({ isDark }) => {
+  const navigate = useNavigate();
   const [timeRemaining, setTimeRemaining] = useState(47 * 60);
   const [showMetrics, setShowMetrics] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -91,8 +93,8 @@ const UnifiedDashboard = ({ isDark }) => {
               🔥 {metrics.streak} day streak
             </span>
 
-            <button className="p-2 rounded-lg hover:bg-black/10">
-              <Settings />
+            <button onClick={() => navigate('/profile')} className="p-2 rounded-lg hover:bg-black/10 border border-gray-300 dark:border-gray-600">
+              <User />
             </button>
           </div>
         </div>
@@ -222,7 +224,9 @@ const UnifiedDashboard = ({ isDark }) => {
                 </p>
               </div>
             </div>
-            <button className="text-sm font-semibold text-blue-500">
+            <button className={`px-4 py-2 rounded-lg font-semibold ${
+              isDark ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}>
               Connect
             </button>
           </div>
