@@ -5,6 +5,7 @@ import TeacherDashBoard from './components/TeacherDashBoard';
 import Analytics from './components/Analytics';
 import Profile from './components/Profile';
 import Settings from './components/Settings';
+import Timetable from './components/Timetable';
 import Sidebar from './components/Sidebar';
 import Signup from './components/Signup';
 import StudentLogin from './components/StudentLogin';
@@ -86,6 +87,7 @@ function App() {
               <Route path="/analytics" element={<Analytics isDark={isDark} userType="teacher" />} />
               <Route path="/profile" element={<Profile isDark={isDark} userType="teacher" />} />
               <Route path="/settings" element={<Settings isDark={isDark} setIsDark={setIsDark} userType="teacher" />} />
+              <Route path="/timetable" element={<Timetable isDark={isDark} />} />
               <Route path="/login" element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -157,6 +159,7 @@ function App() {
             <Route path="/analytics" element={<Analytics isDark={isDark} />} />
             <Route path="/profile" element={<Profile isDark={isDark} />} />
             <Route path="/settings" element={<Settings isDark={isDark} setIsDark={setIsDark} />} />
+            <Route path="/timetable" element={<Timetable isDark={isDark} />} />
             <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
