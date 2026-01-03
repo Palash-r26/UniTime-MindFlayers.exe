@@ -5,7 +5,6 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin }) => 
     email: '',
     password: ''
   });
-  const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -19,7 +18,7 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin }) => 
     // Handle login logic here
     console.log('Teacher login data:', formData);
     // Simulate login success
-    onLogin('teacher');
+    onLogin();
   };
 
   return (
@@ -41,7 +40,6 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin }) => 
           <label htmlFor="password" className="block text-sm font-semibold text-gray-800 mb-1.5">Password</label>
           <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-3.5 py-2.75 border-2 border-gray-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:outline-none focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]" />
         </div>
-        <div id="message" className="text-sm text-red-500 mt-3.75 mb-3.75 hidden" style={{ display: message ? 'block' : 'none' }}>{message}</div>
         <button type="submit" className="w-full py-3 bg-blue-600 border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-blue-700 hover:shadow-[0_6px_15px_rgba(37,99,235,0.2)]">Login</button>
       </form>
 
