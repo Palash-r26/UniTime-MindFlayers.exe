@@ -6,7 +6,6 @@ const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin }) => 
     password: '',
     remember: false
   });
-  const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -21,7 +20,7 @@ const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin }) => 
     // Handle login logic here
     console.log('Student login data:', formData);
     // Simulate login success
-    onLogin('student');
+    onLogin();
   };
 
   return (
@@ -50,7 +49,6 @@ const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin }) => 
           <a href="#" className="text-blue-600">Forgot password?</a>
         </div>
 
-        <div id="message" className="text-sm text-red-500 mt-3.75 mb-3.75 hidden" style={{ display: message ? 'block' : 'none' }}>{message}</div>
         <button type="submit" className="w-full py-3 bg-blue-600 border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-blue-700 hover:shadow-[0_6px_15px_rgba(37,99,235,0.2)]">Login</button>
       </form>
 
