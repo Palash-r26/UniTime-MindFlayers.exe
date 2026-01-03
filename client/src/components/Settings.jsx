@@ -1,6 +1,6 @@
-import { Bell, Moon, Sun, Clock, Shield, Save } from "lucide-react";
+import { Bell, Moon, Sun, Clock, Shield, Save, Users, BookOpen } from "lucide-react";
 
-export default function Settings({ isDark, setIsDark }) {
+export default function Settings({ isDark, setIsDark, userType = 'student' }) {
   const cardClass = isDark
     ? "bg-gray-800 border-gray-700"
     : "bg-white border-gray-200";
@@ -24,8 +24,12 @@ export default function Settings({ isDark, setIsDark }) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className={`font-medium ${textClass}`}>Study Reminders</p>
-              <p className={`text-sm ${mutedTextClass}`}>Get notified when it's time to study</p>
+              <p className={`font-medium ${textClass}`}>
+                {userType === 'teacher' ? 'Class Reminders' : 'Study Reminders'}
+              </p>
+              <p className={`text-sm ${mutedTextClass}`}>
+                {userType === 'teacher' ? 'Get notified before class starts' : 'Get notified when it\'s time to study'}
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -35,8 +39,12 @@ export default function Settings({ isDark, setIsDark }) {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className={`font-medium ${textClass}`}>Break Reminders</p>
-              <p className={`text-sm ${mutedTextClass}`}>Remind me to take breaks</p>
+              <p className={`font-medium ${textClass}`}>
+                {userType === 'teacher' ? 'Assignment Deadlines' : 'Break Reminders'}
+              </p>
+              <p className={`text-sm ${mutedTextClass}`}>
+                {userType === 'teacher' ? 'Remind me of upcoming assignment deadlines' : 'Remind me to take breaks'}
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -46,8 +54,12 @@ export default function Settings({ isDark, setIsDark }) {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className={`font-medium ${textClass}`}>Weekly Reports</p>
-              <p className={`text-sm ${mutedTextClass}`}>Receive weekly progress summaries</p>
+              <p className={`font-medium ${textClass}`}>
+                {userType === 'teacher' ? 'Student Performance Alerts' : 'Weekly Reports'}
+              </p>
+              <p className={`text-sm ${mutedTextClass}`}>
+                {userType === 'teacher' ? 'Get alerts about student performance issues' : 'Receive weekly progress summaries'}
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" />
@@ -94,38 +106,71 @@ export default function Settings({ isDark, setIsDark }) {
       {/* Focus Settings */}
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${textClass}`}>
-          <Clock className="w-5 h-5 text-green-500" />
-          Focus Settings
+          {userType === 'teacher' ? <BookOpen className="w-5 h-5 text-green-500" /> : <Clock className="w-5 h-5 text-green-500" />}
+          {userType === 'teacher' ? 'Class Settings' : 'Focus Settings'}
         </h2>
         <div className="space-y-4">
-          <div>
-            <label className={`block font-medium mb-2 ${textClass}`}>Default Study Session (minutes)</label>
-            <select className={`w-full p-3 rounded-lg border ${
-              isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-            }`}>
-              <option>25</option>
-              <option>30</option>
-              <option>45</option>
-              <option>60</option>
-            </select>
-          </div>
+          {userType === 'teacher' ? (
+            <>
+              <div>
+                <label className={`block font-medium mb-2 ${textClass}`}>Default Class Duration (minutes)</label>
+                <select className={`w-full p-3 rounded-lg border ${
+                  isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}>
+                  <option>60</option>
+                  <option>75</option>
+                  <option>90</option>
+                  <option>120</option>
+                </select>
+              </div>
 
-          <div>
-            <label className={`block font-medium mb-2 ${textClass}`}>Default Break Time (minutes)</label>
-            <select className={`w-full p-3 rounded-lg border ${
-              isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-            }`}>
-              <option>5</option>
-              <option>10</option>
-              <option>15</option>
-              <option>20</option>
-            </select>
-          </div>
+              <div>
+                <label className={`block font-medium mb-2 ${textClass}`}>Attendance Tracking</label>
+                <select className={`w-full p-3 rounded-lg border ${
+                  isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}>
+                  <option>Manual</option>
+                  <option>Automatic</option>
+                  <option>Hybrid</option>
+                </select>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className={`block font-medium mb-2 ${textClass}`}>Default Study Session (minutes)</label>
+                <select className={`w-full p-3 rounded-lg border ${
+                  isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}>
+                  <option>25</option>
+                  <option>30</option>
+                  <option>45</option>
+                  <option>60</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={`block font-medium mb-2 ${textClass}`}>Default Break Time (minutes)</label>
+                <select className={`w-full p-3 rounded-lg border ${
+                  isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}>
+                  <option>5</option>
+                  <option>10</option>
+                  <option>15</option>
+                  <option>20</option>
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center justify-between">
             <div>
-              <p className={`font-medium ${textClass}`}>Auto-start Breaks</p>
-              <p className={`text-sm ${mutedTextClass}`}>Automatically start break timer after study session</p>
+              <p className={`font-medium ${textClass}`}>
+                {userType === 'teacher' ? 'Auto-grade Assignments' : 'Auto-start Breaks'}
+              </p>
+              <p className={`text-sm ${mutedTextClass}`}>
+                {userType === 'teacher' ? 'Automatically grade simple assignments' : 'Automatically start break timer after study session'}
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -155,14 +200,31 @@ export default function Settings({ isDark, setIsDark }) {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className={`font-medium ${textClass}`}>Study Session Privacy</p>
-              <p className={`text-sm ${mutedTextClass}`}>Hide study activities from other users</p>
+              <p className={`font-medium ${textClass}`}>
+                {userType === 'teacher' ? 'Student Data Privacy' : 'Study Session Privacy'}
+              </p>
+              <p className={`text-sm ${mutedTextClass}`}>
+                {userType === 'teacher' ? 'Control how student data is shared and used' : 'Hide study activities from other users'}
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
+
+          {userType === 'teacher' && (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`font-medium ${textClass}`}>Grade Visibility</p>
+                <p className={`text-sm ${mutedTextClass}`}>Allow students to see their grades immediately</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          )}
         </div>
       </div>
 

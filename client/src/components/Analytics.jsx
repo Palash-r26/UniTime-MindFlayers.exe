@@ -1,6 +1,6 @@
-import { TrendingUp, Clock, Target, Award, Calendar, BarChart3, PieChart } from "lucide-react";
+import { TrendingUp, Clock, Target, Award, Calendar, BarChart3, PieChart, Users, BookOpen, CheckCircle } from "lucide-react";
 
-export default function Analytics({ isDark }) {
+export default function Analytics({ isDark, userType = 'student' }) {
   const cardClass = isDark
     ? "bg-gray-800 border-gray-700"
     : "bg-white border-gray-200";
@@ -33,21 +33,73 @@ export default function Analytics({ isDark }) {
 
   const STUDY_DAYS = [2, 5, 7, 9, 12, 14, 16, 19, 21, 23, 26, 28, 30];
 
+  // Teacher-specific data
+  const teacherWeeklyData = [
+    { day: 'Mon', classes: 3, attendance: 85 },
+    { day: 'Tue', classes: 4, attendance: 92 },
+    { day: 'Wed', classes: 2, attendance: 78 },
+    { day: 'Thu', classes: 3, attendance: 88 },
+    { day: 'Fri', classes: 4, attendance: 95 },
+    { day: 'Sat', classes: 1, attendance: 70 },
+    { day: 'Sun', classes: 0, attendance: 0 }
+  ];
+
+  const teacherSubjectBreakdown = [
+    { subject: 'Operating Systems', students: 45, avgGrade: 82, color: 'bg-blue-500' },
+    { subject: 'Data Structures', students: 38, avgGrade: 78, color: 'bg-green-500' },
+    { subject: 'Algorithms', students: 42, avgGrade: 85, color: 'bg-purple-500' },
+    { subject: 'Database Systems', students: 35, avgGrade: 80, color: 'bg-orange-500' }
+  ];
+
+  const teacherAchievements = [
+    { title: 'High Engagement', description: '95% average attendance this week', icon: '📈' },
+    { title: 'Grade Improvement', description: '15% increase in average grades', icon: '🎓' },
+    { title: 'Active Participation', description: '85% student participation rate', icon: '💬' }
+  ];
+
+  const TEACHER_STUDY_DAYS = [1, 3, 5, 8, 10, 12, 15, 17, 19, 22, 24, 26, 29];
+
+  const currentData = userType === 'teacher' ? {
+    weeklyData: teacherWeeklyData,
+    subjectBreakdown: teacherSubjectBreakdown,
+    achievements: teacherAchievements,
+    studyDays: TEACHER_STUDY_DAYS,
+    metrics: {
+      totalHours: '156h',
+      productive: '91%',
+      streak: '8',
+      sessions: '28'
+    }
+  } : {
+    weeklyData,
+    subjectBreakdown,
+    achievements,
+    studyDays: STUDY_DAYS,
+    metrics: {
+      totalHours: '32.5h',
+      productive: '87%',
+      streak: '12',
+      sessions: '23'
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className={`text-3xl font-bold ${textClass}`}>Analytics</h1>
-        <p className={`mt-2 ${mutedTextClass}`}>Track your academic progress and productivity</p>
+        <p className={`mt-2 ${mutedTextClass}`}>
+          {userType === 'teacher' ? 'Track your teaching performance and student progress' : 'Track your academic progress and productivity'}
+        </p>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className={`p-6 rounded-xl border ${cardClass}`}>
           <div className="flex items-center gap-3">
-            <Clock className="w-8 h-8 text-blue-500" />
+            {userType === 'teacher' ? <Users className="w-8 h-8 text-blue-500" /> : <Clock className="w-8 h-8 text-blue-500" />}
             <div>
-              <p className={`text-2xl font-bold ${textClass}`}>32.5h</p>
-              <p className={`text-sm ${mutedTextClass}`}>This Week</p>
+              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.totalHours}</p>
+              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Teaching Hours' : 'This Week'}</p>
             </div>
           </div>
         </div>
@@ -56,8 +108,8 @@ export default function Analytics({ isDark }) {
           <div className="flex items-center gap-3">
             <Target className="w-8 h-8 text-green-500" />
             <div>
-              <p className={`text-2xl font-bold ${textClass}`}>87%</p>
-              <p className={`text-sm ${mutedTextClass}`}>Productive</p>
+              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.productive}</p>
+              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Avg Attendance' : 'Productive'}</p>
             </div>
           </div>
         </div>
@@ -66,8 +118,8 @@ export default function Analytics({ isDark }) {
           <div className="flex items-center gap-3">
             <TrendingUp className="w-8 h-8 text-purple-500" />
             <div>
-              <p className={`text-2xl font-bold ${textClass}`}>12</p>
-              <p className={`text-sm ${mutedTextClass}`}>Day Streak</p>
+              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.streak}</p>
+              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Week Streak' : 'Day Streak'}</p>
             </div>
           </div>
         </div>
@@ -76,8 +128,8 @@ export default function Analytics({ isDark }) {
           <div className="flex items-center gap-3">
             <Award className="w-8 h-8 text-yellow-500" />
             <div>
-              <p className={`text-2xl font-bold ${textClass}`}>23</p>
-              <p className={`text-sm ${mutedTextClass}`}>Sessions</p>
+              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.sessions}</p>
+              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Classes' : 'Sessions'}</p>
             </div>
           </div>
         </div>
@@ -87,10 +139,10 @@ export default function Analytics({ isDark }) {
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${textClass}`}>
           <BarChart3 className="w-5 h-5 text-blue-500" />
-          Weekly Study Hours
+          {userType === 'teacher' ? 'Weekly Class Attendance' : 'Weekly Study Hours'}
         </h2>
         <div className="space-y-4">
-          {weeklyData.map((day, index) => (
+          {currentData.weeklyData.map((day, index) => (
             <div key={index} className="flex items-center gap-4">
               <div className={`w-12 text-sm font-medium ${textClass}`}>{day.day}</div>
               <div className="flex-1">
@@ -99,23 +151,33 @@ export default function Analytics({ isDark }) {
                 } relative overflow-hidden`}>
                   <div
                     className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(day.hours / 8) * 100}%` }}
+                    style={{ width: userType === 'teacher' ? `${day.attendance}%` : `${(day.hours / 8) * 100}%` }}
                   ></div>
-                  <div
-                    className="absolute top-0 h-full border-r-2 border-dashed border-gray-400"
-                    style={{ left: `${(day.goal / 8) * 100}%` }}
-                  ></div>
+                  {userType !== 'teacher' && (
+                    <div
+                      className="absolute top-0 h-full border-r-2 border-dashed border-gray-400"
+                      style={{ left: `${(day.goal / 8) * 100}%` }}
+                    ></div>
+                  )}
                 </div>
               </div>
-              <div className={`w-16 text-sm text-right ${textClass}`}>{day.hours}h</div>
+              <div className={`w-16 text-sm text-right ${textClass}`}>
+                {userType === 'teacher' ? `${day.attendance}%` : `${day.hours}h`}
+              </div>
             </div>
           ))}
         </div>
         <div className="flex items-center gap-2 mt-4 text-sm">
           <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-          <span className={mutedTextClass}>Actual Hours</span>
-          <div className="w-3 h-0.5 border-t-2 border-dashed border-gray-400 ml-4"></div>
-          <span className={mutedTextClass}>Goal (5h)</span>
+          <span className={mutedTextClass}>
+            {userType === 'teacher' ? 'Attendance Rate' : 'Actual Hours'}
+          </span>
+          {userType !== 'teacher' && (
+            <>
+              <div className="w-3 h-0.5 border-t-2 border-dashed border-gray-400 ml-4"></div>
+              <span className={mutedTextClass}>Goal (5h)</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -123,23 +185,25 @@ export default function Analytics({ isDark }) {
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${textClass}`}>
           <PieChart className="w-5 h-5 text-green-500" />
-          Subject Breakdown
+          {userType === 'teacher' ? 'Subject Performance' : 'Subject Breakdown'}
         </h2>
         <div className="space-y-4">
-          {subjectBreakdown.map((subject, index) => (
+          {currentData.subjectBreakdown.map((subject, index) => (
             <div key={index} className="flex items-center gap-4">
               <div className={`w-4 h-4 rounded-full ${subject.color}`}></div>
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">
                   <span className={`font-medium ${textClass}`}>{subject.subject}</span>
-                  <span className={`text-sm ${mutedTextClass}`}>{subject.hours}h ({subject.percentage}%)</span>
+                  <span className={`text-sm ${mutedTextClass}`}>
+                    {userType === 'teacher' ? `${subject.students} students (${subject.avgGrade}%)` : `${subject.hours}h (${subject.percentage}%)`}
+                  </span>
                 </div>
                 <div className={`h-2 rounded-full ${
                   isDark ? 'bg-gray-700' : 'bg-gray-200'
                 }`}>
                   <div
                     className={`h-full rounded-full ${subject.color} transition-all duration-500`}
-                    style={{ width: `${subject.percentage}%` }}
+                    style={{ width: userType === 'teacher' ? `${subject.avgGrade}%` : `${subject.percentage}%` }}
                   ></div>
                 </div>
               </div>
@@ -155,7 +219,7 @@ export default function Analytics({ isDark }) {
           Recent Achievements
         </h2>
         <div className="space-y-4">
-          {achievements.map((achievement, index) => (
+          {currentData.achievements.map((achievement, index) => (
             <div key={index} className={`flex items-start gap-4 p-4 rounded-lg ${
               isDark ? 'bg-gray-700' : 'bg-gray-50'
             }`}>
@@ -170,43 +234,45 @@ export default function Analytics({ isDark }) {
       </div>
 
     {/* Study Calendar */}
-<div className={`p-4 rounded-xl border ${cardClass}`}>
-  <h2 className={`text-base font-semibold mb-4 flex items-center gap-2 ${textClass}`}>
-    <Calendar className="w-4 h-4 text-purple-500" />
-    Study Calendar
-  </h2>
+    <div className={`p-4 rounded-xl border ${cardClass}`}>
+      <h2 className={`text-base font-semibold mb-4 flex items-center gap-2 ${textClass}`}>
+        <Calendar className="w-4 h-4 text-purple-500" />
+        {userType === 'teacher' ? 'Class Schedule' : 'Study Calendar'}
+      </h2>
 
-  <div className="grid grid-cols-7 gap-1">
-    {['S','M','T','W','T','F','S'].map(d => (
-      <div key={d} className={`text-center text-xs font-medium py-1 ${mutedTextClass}`}>
-        {d}
+      <div className="grid grid-cols-7 gap-1">
+        {['S','M','T','W','T','F','S'].map(d => (
+          <div key={d} className={`text-center text-xs font-medium py-1 ${mutedTextClass}`}>
+            {d}
+          </div>
+        ))}
+
+        {Array.from({ length: 31 }, (_, i) => {
+          const day = i + 1;
+          const isStudy = currentData.studyDays.includes(day);
+
+          return (
+            <div
+              key={day}
+              className={`h-10 flex items-center justify-center rounded-md text-xs ${
+                isStudy
+                  ? isDark ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
+                  : isDark ? 'text-gray-400' : 'text-gray-300'
+              }`}
+            >
+              {day}
+            </div>
+          );
+        })}
       </div>
-    ))}
 
-    {Array.from({ length: 31 }, (_, i) => {
-      const day = i + 1;
-      const isStudy = STUDY_DAYS.includes(day);
-
-      return (
-        <div
-          key={day}
-          className={`h-10 flex items-center justify-center rounded-md text-xs ${
-            isStudy
-              ? isDark ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
-              : isDark ? 'text-gray-400' : 'text-gray-300'
-          }`}
-        >
-          {day}
-        </div>
-      );
-    })}
-  </div>
-
-  <div className="flex items-center gap-2 mt-3 text-xs">
-    <span className={`w-2 h-2 rounded-full ${isDark ? 'bg-blue-600' : 'bg-blue-100'}`} />
-    <span className={mutedTextClass}>Study days</span>
-  </div>
-</div>
+      <div className="flex items-center gap-2 mt-3 text-xs">
+        <span className={`w-2 h-2 rounded-full ${isDark ? 'bg-blue-600' : 'bg-blue-100'}`} />
+        <span className={mutedTextClass}>
+          {userType === 'teacher' ? 'Class days' : 'Study days'}
+        </span>
+      </div>
     </div>
-  );
+  </div>
+);
 }
