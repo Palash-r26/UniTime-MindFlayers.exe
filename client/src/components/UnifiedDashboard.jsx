@@ -11,7 +11,8 @@ import {
   Sun,
   Moon,
   Zap,
-  CheckCircle
+  CheckCircle,
+  Calendar
 } from "lucide-react";
 
 const UnifiedDashboard = ({ isDark }) => {
