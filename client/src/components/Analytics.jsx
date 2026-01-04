@@ -1,138 +1,111 @@
-import { TrendingUp, Clock, Target, Award, Calendar, BarChart3, PieChart, Users, BookOpen, CheckCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { db, auth } from "../firebase";
+import { doc, onSnapshot, collection, query, where } from "firebase/firestore";
+import { 
+  TrendingUp, Clock, Target, Award, Calendar, 
+  BarChart3, PieChart, Users, BookOpen 
+} from "lucide-react";
 
 export default function Analytics({ isDark, userType = 'student' }) {
-  const cardClass = isDark
-    ? "bg-gray-800 border-gray-700"
-    : "bg-white border-gray-200";
+  // --- REAL-TIME STATES ---
+  const [metrics, setMetrics] = useState({
+    totalHours: '0h',
+    productive: '0%',
+    streak: '0',
+    sessions: '0'
+  });
+  const [weeklyData, setWeeklyData] = useState([]);
+  const [subjectBreakdown, setSubjectBreakdown] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [studyDays, setStudyDays] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  const cardClass = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
   const textClass = isDark ? "text-white" : "text-gray-900";
   const mutedTextClass = isDark ? "text-gray-300" : "text-gray-600";
 
-  const weeklyData = [
-    { day: 'Mon', hours: 4.5, goal: 5 },
-    { day: 'Tue', hours: 6.2, goal: 5 },
-    { day: 'Wed', hours: 3.8, goal: 5 },
-    { day: 'Thu', hours: 5.5, goal: 5 },
-    { day: 'Fri', hours: 4.2, goal: 5 },
-    { day: 'Sat', hours: 7.1, goal: 5 },
-    { day: 'Sun', hours: 2.3, goal: 5 }
-  ];
+  useEffect(() => {
+    if (!auth.currentUser) return;
 
-  const subjectBreakdown = [
-    { subject: 'Computer Science', hours: 18.5, percentage: 45, color: 'bg-blue-500' },
-    { subject: 'Mathematics', hours: 12.3, percentage: 30, color: 'bg-green-500' },
-    { subject: 'Physics', hours: 6.2, percentage: 15, color: 'bg-purple-500' },
-    { subject: 'Other', hours: 4.0, percentage: 10, color: 'bg-orange-500' }
-  ];
+    // 1. Listen for Overall Analytics Metrics
+    const analyticsRef = doc(db, "analytics", auth.currentUser.uid);
+    const unsubMetrics = onSnapshot(analyticsRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setMetrics({
+          totalHours: data.totalHours || '0h',
+          productive: data.productivityScore || '0%',
+          streak: data.streak || '0',
+          sessions: data.totalSessions || '0'
+        });
+        setWeeklyData(data.weeklyProgress || []);
+        setSubjectBreakdown(data.subjectBreakdown || []);
+        setStudyDays(data.activeDays || []);
+      }
+    });
 
-  const achievements = [
-    { title: '7-Day Streak', description: 'Completed study goals for 7 consecutive days', icon: '🔥' },
-    { title: 'Productivity Master', description: 'Achieved 90%+ productive time this week', icon: '⚡' },
-    { title: 'Goal Crusher', description: 'Completed 15 study sessions this week', icon: '🎯' }
-  ];
+    // 2. Listen for Achievements Collection
+    const achvQuery = query(
+      collection(db, "achievements"), 
+      where("userId", "==", auth.currentUser.uid)
+    );
+    const unsubAchv = onSnapshot(achvQuery, (snapshot) => {
+      const achvList = snapshot.docs.map(d => d.data());
+      setAchievements(achvList);
+      setLoading(false);
+    });
 
-  const STUDY_DAYS = [2, 5, 7, 9, 12, 14, 16, 19, 21, 23, 26, 28, 30];
+    return () => {
+      unsubMetrics();
+      unsubAchv();
+    };
+  }, [userType]);
 
-  // Teacher-specific data
-  const teacherWeeklyData = [
-    { day: 'Mon', classes: 3, attendance: 85 },
-    { day: 'Tue', classes: 4, attendance: 92 },
-    { day: 'Wed', classes: 2, attendance: 78 },
-    { day: 'Thu', classes: 3, attendance: 88 },
-    { day: 'Fri', classes: 4, attendance: 95 },
-    { day: 'Sat', classes: 1, attendance: 70 },
-    { day: 'Sun', classes: 0, attendance: 0 }
-  ];
-
-  const teacherSubjectBreakdown = [
-    { subject: 'Operating Systems', students: 45, avgGrade: 82, color: 'bg-blue-500' },
-    { subject: 'Data Structures', students: 38, avgGrade: 78, color: 'bg-green-500' },
-    { subject: 'Algorithms', students: 42, avgGrade: 85, color: 'bg-purple-500' },
-    { subject: 'Database Systems', students: 35, avgGrade: 80, color: 'bg-orange-500' }
-  ];
-
-  const teacherAchievements = [
-    { title: 'High Engagement', description: '95% average attendance this week', icon: '📈' },
-    { title: 'Grade Improvement', description: '15% increase in average grades', icon: '🎓' },
-    { title: 'Active Participation', description: '85% student participation rate', icon: '💬' }
-  ];
-
-  const TEACHER_STUDY_DAYS = [1, 3, 5, 8, 10, 12, 15, 17, 19, 22, 24, 26, 29];
-
-  const currentData = userType === 'teacher' ? {
-    weeklyData: teacherWeeklyData,
-    subjectBreakdown: teacherSubjectBreakdown,
-    achievements: teacherAchievements,
-    studyDays: TEACHER_STUDY_DAYS,
-    metrics: {
-      totalHours: '156h',
-      productive: '91%',
-      streak: '8',
-      sessions: '28'
-    }
-  } : {
-    weeklyData,
-    subjectBreakdown,
-    achievements,
-    studyDays: STUDY_DAYS,
-    metrics: {
-      totalHours: '32.5h',
-      productive: '87%',
-      streak: '12',
-      sessions: '23'
-    }
-  };
+  if (loading) {
+    return <div className="p-8 text-center animate-pulse">Loading real-time analytics...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className={`text-3xl font-bold ${textClass}`}>Analytics</h1>
         <p className={`mt-2 ${mutedTextClass}`}>
-          {userType === 'teacher' ? 'Track your teaching performance and student progress' : 'Track your academic progress and productivity'}
+          {userType === 'teacher' 
+            ? 'Track your teaching performance and student progress' 
+            : 'Track your academic progress and productivity'}
         </p>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className={`p-6 rounded-xl border ${cardClass}`}>
-          <div className="flex items-center gap-3">
-            {userType === 'teacher' ? <Users className="w-8 h-8 text-blue-500" /> : <Clock className="w-8 h-8 text-blue-500" />}
-            <div>
-              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.totalHours}</p>
-              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Teaching Hours' : 'This Week'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className={`p-6 rounded-xl border ${cardClass}`}>
-          <div className="flex items-center gap-3">
-            <Target className="w-8 h-8 text-green-500" />
-            <div>
-              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.productive}</p>
-              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Avg Attendance' : 'Productive'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className={`p-6 rounded-xl border ${cardClass}`}>
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-purple-500" />
-            <div>
-              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.streak}</p>
-              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Week Streak' : 'Day Streak'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className={`p-6 rounded-xl border ${cardClass}`}>
-          <div className="flex items-center gap-3">
-            <Award className="w-8 h-8 text-yellow-500" />
-            <div>
-              <p className={`text-2xl font-bold ${textClass}`}>{currentData.metrics.sessions}</p>
-              <p className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? 'Classes' : 'Sessions'}</p>
-            </div>
-          </div>
-        </div>
+        <MetricCard 
+          icon={userType === 'teacher' ? <Users /> : <Clock />} 
+          value={metrics.totalHours} 
+          label={userType === 'teacher' ? 'Teaching Hours' : 'This Week'} 
+          color="text-blue-500" 
+          {...{cardClass, textClass, mutedTextClass}}
+        />
+        <MetricCard 
+          icon={<Target />} 
+          value={metrics.productive} 
+          label={userType === 'teacher' ? 'Avg Attendance' : 'Productive'} 
+          color="text-green-500" 
+          {...{cardClass, textClass, mutedTextClass}}
+        />
+        <MetricCard 
+          icon={<TrendingUp />} 
+          value={metrics.streak} 
+          label={userType === 'teacher' ? 'Week Streak' : 'Day Streak'} 
+          color="text-purple-500" 
+          {...{cardClass, textClass, mutedTextClass}}
+        />
+        <MetricCard 
+          icon={<Award />} 
+          value={metrics.sessions} 
+          label={userType === 'teacher' ? 'Classes' : 'Sessions'} 
+          color="text-yellow-500" 
+          {...{cardClass, textClass, mutedTextClass}}
+        />
       </div>
 
       {/* Weekly Progress Chart */}
@@ -142,42 +115,22 @@ export default function Analytics({ isDark, userType = 'student' }) {
           {userType === 'teacher' ? 'Weekly Class Attendance' : 'Weekly Study Hours'}
         </h2>
         <div className="space-y-4">
-          {currentData.weeklyData.map((day, index) => (
+          {weeklyData.map((day, index) => (
             <div key={index} className="flex items-center gap-4">
               <div className={`w-12 text-sm font-medium ${textClass}`}>{day.day}</div>
               <div className="flex-1">
-                <div className={`h-6 rounded-full ${
-                  isDark ? 'bg-gray-700' : 'bg-gray-200'
-                } relative overflow-hidden`}>
+                <div className={`h-6 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'} relative overflow-hidden`}>
                   <div
                     className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                    style={{ width: userType === 'teacher' ? `${day.attendance}%` : `${(day.hours / 8) * 100}%` }}
+                    style={{ width: `${day.value}%` }}
                   ></div>
-                  {userType !== 'teacher' && (
-                    <div
-                      className="absolute top-0 h-full border-r-2 border-dashed border-gray-400"
-                      style={{ left: `${(day.goal / 8) * 100}%` }}
-                    ></div>
-                  )}
                 </div>
               </div>
               <div className={`w-16 text-sm text-right ${textClass}`}>
-                {userType === 'teacher' ? `${day.attendance}%` : `${day.hours}h`}
+                {userType === 'teacher' ? `${day.value}%` : `${day.hours}h`}
               </div>
             </div>
           ))}
-        </div>
-        <div className="flex items-center gap-2 mt-4 text-sm">
-          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-          <span className={mutedTextClass}>
-            {userType === 'teacher' ? 'Attendance Rate' : 'Actual Hours'}
-          </span>
-          {userType !== 'teacher' && (
-            <>
-              <div className="w-3 h-0.5 border-t-2 border-dashed border-gray-400 ml-4"></div>
-              <span className={mutedTextClass}>Goal (5h)</span>
-            </>
-          )}
         </div>
       </div>
 
@@ -188,22 +141,20 @@ export default function Analytics({ isDark, userType = 'student' }) {
           {userType === 'teacher' ? 'Subject Performance' : 'Subject Breakdown'}
         </h2>
         <div className="space-y-4">
-          {currentData.subjectBreakdown.map((subject, index) => (
+          {subjectBreakdown.map((subject, index) => (
             <div key={index} className="flex items-center gap-4">
               <div className={`w-4 h-4 rounded-full ${subject.color}`}></div>
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">
                   <span className={`font-medium ${textClass}`}>{subject.subject}</span>
                   <span className={`text-sm ${mutedTextClass}`}>
-                    {userType === 'teacher' ? `${subject.students} students (${subject.avgGrade}%)` : `${subject.hours}h (${subject.percentage}%)`}
+                    {userType === 'teacher' ? `${subject.students} students` : `${subject.hours}h`}
                   </span>
                 </div>
-                <div className={`h-2 rounded-full ${
-                  isDark ? 'bg-gray-700' : 'bg-gray-200'
-                }`}>
+                <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
                   <div
                     className={`h-full rounded-full ${subject.color} transition-all duration-500`}
-                    style={{ width: userType === 'teacher' ? `${subject.avgGrade}%` : `${subject.percentage}%` }}
+                    style={{ width: `${subject.percentage}%` }}
                   ></div>
                 </div>
               </div>
@@ -212,17 +163,15 @@ export default function Analytics({ isDark, userType = 'student' }) {
         </div>
       </div>
 
-      {/* Recent Achievements */}
+      {/* Achievements */}
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${textClass}`}>
           <Award className="w-5 h-5 text-yellow-500" />
           Recent Achievements
         </h2>
-        <div className="space-y-4">
-          {currentData.achievements.map((achievement, index) => (
-            <div key={index} className={`flex items-start gap-4 p-4 rounded-lg ${
-              isDark ? 'bg-gray-700' : 'bg-gray-50'
-            }`}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {achievements.map((achievement, index) => (
+            <div key={index} className={`flex items-start gap-4 p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <span className="text-2xl">{achievement.icon}</span>
               <div>
                 <h3 className={`font-semibold ${textClass}`}>{achievement.title}</h3>
@@ -233,46 +182,51 @@ export default function Analytics({ isDark, userType = 'student' }) {
         </div>
       </div>
 
-    {/* Study Calendar */}
+      {/* Calendar Component */}
+      <CalendarSection {...{cardClass, textClass, mutedTextClass, isDark, userType, studyDays}} />
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTS FOR CLEANER CODE ---
+
+function MetricCard({ icon, value, label, color, cardClass, textClass, mutedTextClass }) {
+  return (
+    <div className={`p-6 rounded-xl border ${cardClass}`}>
+      <div className="flex items-center gap-3">
+        <div className={color}>{React.cloneElement(icon, { size: 32 })}</div>
+        <div>
+          <p className={`text-2xl font-bold ${textClass}`}>{value}</p>
+          <p className={`text-sm ${mutedTextClass}`}>{label}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarSection({ cardClass, textClass, mutedTextClass, isDark, userType, studyDays }) {
+  return (
     <div className={`p-4 rounded-xl border ${cardClass}`}>
       <h2 className={`text-base font-semibold mb-4 flex items-center gap-2 ${textClass}`}>
         <Calendar className="w-4 h-4 text-purple-500" />
         {userType === 'teacher' ? 'Class Schedule' : 'Study Calendar'}
       </h2>
-
       <div className="grid grid-cols-7 gap-1">
         {['S','M','T','W','T','F','S'].map(d => (
-          <div key={d} className={`text-center text-xs font-medium py-1 ${mutedTextClass}`}>
-            {d}
-          </div>
+          <div key={d} className={`text-center text-xs font-medium py-1 ${mutedTextClass}`}>{d}</div>
         ))}
-
         {Array.from({ length: 31 }, (_, i) => {
           const day = i + 1;
-          const isStudy = currentData.studyDays.includes(day);
-
+          const isActive = studyDays.includes(day);
           return (
-            <div
-              key={day}
-              className={`h-10 flex items-center justify-center rounded-md text-xs ${
-                isStudy
-                  ? isDark ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
-                  : isDark ? 'text-gray-400' : 'text-gray-300'
-              }`}
-            >
+            <div key={day} className={`h-10 flex items-center justify-center rounded-md text-xs ${
+              isActive ? (isDark ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800') : (isDark ? 'text-gray-400' : 'text-gray-300')
+            }`}>
               {day}
             </div>
           );
         })}
       </div>
-
-      <div className="flex items-center gap-2 mt-3 text-xs">
-        <span className={`w-2 h-2 rounded-full ${isDark ? 'bg-blue-600' : 'bg-blue-100'}`} />
-        <span className={mutedTextClass}>
-          {userType === 'teacher' ? 'Class days' : 'Study days'}
-        </span>
-      </div>
     </div>
-  </div>
-);
+  );
 }

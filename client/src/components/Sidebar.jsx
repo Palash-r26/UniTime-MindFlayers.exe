@@ -1,4 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { auth } from "../firebase"; // Ensure this path correctly points to your firebase.js
+import { signOut } from "firebase/auth"; //
 import {
   LayoutDashboard,
   BarChart3,
@@ -22,9 +24,15 @@ export default function Sidebar({ onLogout, isDark, setIsDark, sidebarOpen, setS
         : "text-gray-700 hover:bg-gray-100"
     }`;
 
-  const handleLogout = () => {
-    onLogout();
-    navigate("/");
+  // Updated logout handler to terminate real-time session
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Terminates Firebase session
+      onLogout(); // Clears local state in App.jsx
+      navigate("/"); // Redirects to login view
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (

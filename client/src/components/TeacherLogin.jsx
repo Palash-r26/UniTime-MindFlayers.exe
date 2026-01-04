@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { auth } from '../firebase'; // Ensure this correctly points to your firebase.js config
+import { signInWithEmailAndPassword } from "firebase/auth"; //
 
 const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [error, setError] = useState(''); // State to display authentication errors
 
   const handleChange = (e) => {
     setFormData({
@@ -13,12 +16,22 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin }) => 
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Teacher login data:', formData);
-    // Simulate login success
-    onLogin();
+    setError(''); // Clear previous errors
+
+    try {
+      // 1. Authenticate the teacher using Firebase Authentication
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      
+      // 2. Log success and trigger local application login state
+      console.log('Teacher logged in successfully');
+      onLogin(); 
+    } catch (err) {
+      // Handle login failures (e.g., incorrect credentials)
+      console.error('Login error:', err.message);
+      setError('Invalid email or password. Please try again.');
+    }
   };
 
   return (
@@ -34,13 +47,38 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin }) => 
       <form id="helpseekerLoginForm" onSubmit={handleSubmit}>
         <div className="text-left mb-3.75">
           <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-1.5">Email</label>
-          <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-3.5 py-2.75 border-2 border-gray-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:outline-none focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]" />
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            value={formData.email} 
+            onChange={handleChange} 
+            required 
+            className="w-full px-3.5 py-2.75 border-2 border-gray-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:outline-none focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]" 
+          />
         </div>
         <div className="text-left mb-3.75">
           <label htmlFor="password" className="block text-sm font-semibold text-gray-800 mb-1.5">Password</label>
-          <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} required className="w-full px-3.5 py-2.75 border-2 border-gray-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:outline-none focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]" />
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            value={formData.password} 
+            onChange={handleChange} 
+            required 
+            className="w-full px-3.5 py-2.75 border-2 border-gray-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:outline-none focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]" 
+          />
         </div>
-        <button type="submit" className="w-full py-3 bg-blue-600 border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-blue-700 hover:shadow-[0_6px_15px_rgba(37,99,235,0.2)]">Login</button>
+
+        {/* Display authentication errors to the user */}
+        {error && <div className="text-red-500 text-sm mb-3">{error}</div>}
+
+        <button 
+          type="submit" 
+          className="w-full py-3 bg-blue-600 border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-blue-700 hover:shadow-[0_6px_15px_rgba(37,99,235,0.2)]"
+        >
+          Login
+        </button>
       </form>
 
       <div className="mt-6.25 text-sm text-gray-800 pt-5 border-t border-gray-200">

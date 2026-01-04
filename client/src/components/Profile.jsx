@@ -1,82 +1,63 @@
-import { User, Mail, Phone, MapPin, Calendar, BookOpen, Award, Target, Users, GraduationCap } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { db, auth } from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import { 
+  User, Mail, Phone, MapPin, Calendar, 
+  BookOpen, Award, Target, Users 
+} from "lucide-react";
 
 export default function Profile({ isDark, userType = 'student' }) {
-  const studentUser = {
-    name: "Alex Johnson",
-    email: "alex.johnson@university.edu",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    joinDate: "September 2023",
-    major: "Computer Science",
-    year: "Junior",
-    gpa: "3.7",
-    courses: [
-      { code: "CS 301", name: "Operating Systems", grade: "A-" },
-      { code: "CS 250", name: "Data Structures", grade: "A" },
-      { code: "MATH 201", name: "Discrete Mathematics", grade: "B+" },
-      { code: "CS 320", name: "Database Systems", grade: "A-" }
-    ],
-    achievements: [
-      "Dean's List - Fall 2023",
-      "Hackathon Winner - CodeFest 2024",
-      "Teaching Assistant - CS 101"
-    ],
-    goals: [
-      "Maintain 3.8+ GPA",
-      "Complete internship by summer",
-      "Master 3 new programming languages"
-    ]
-  };
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const teacherUser = {
-    name: "Dr. Sarah Chen",
-    email: "sarah.chen@university.edu",
-    phone: "+1 (555) 987-6543",
-    location: "San Francisco, CA",
-    joinDate: "August 2018",
-    department: "Computer Science",
-    position: "Associate Professor",
-    experience: "6 years",
-    students: 180,
-    subjects: [
-      { code: "CS 301", name: "Operating Systems", students: 45 },
-      { code: "CS 250", name: "Data Structures", students: 38 },
-      { code: "CS 320", name: "Database Systems", students: 35 },
-      { code: "CS 400", name: "Algorithms", students: 42 }
-    ],
-    achievements: [
-      "Excellence in Teaching Award 2023",
-      "Published 12 research papers",
-      "Department Chair 2022-2023"
-    ],
-    goals: [
-      "Publish 3 more research papers",
-      "Improve student satisfaction to 95%",
-      "Develop new AI curriculum"
-    ]
-  };
-
-  const user = userType === 'teacher' ? teacherUser : studentUser;
-
-  const cardClass = isDark
-    ? "bg-gray-800 border-gray-700"
-    : "bg-white border-gray-200";
-
+  const cardClass = isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
   const textClass = isDark ? "text-white" : "text-gray-900";
   const mutedTextClass = isDark ? "text-gray-300" : "text-gray-600";
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    // Listen to the specific user document in Firestore
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setUser(docSnap.data());
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) return <div className="p-10 text-center animate-pulse">Loading profile...</div>;
+  if (!user) return <div className="p-10 text-center">No profile found. Please update your settings.</div>;
+
+  // Map backend data to display (providing defaults for missing fields)
+  const displayData = {
+    name: user.name || "User",
+    email: user.email || auth.currentUser.email,
+    phone: user.phone || "Not provided",
+    location: user.location || "Not provided",
+    joinDate: user.createdAt?.toDate ? user.createdAt.toDate().toLocaleDateString() : "Recently",
+    major: user.major || user.department || "General Studies",
+    year: user.year || user.position || "N/A",
+    gpa: user.gpa || user.experience || "N/A",
+    students: user.students || 0,
+    courses: user.courses || user.subjects || [],
+    achievements: user.achievements || [],
+    goals: user.goals || []
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-          isDark ? 'bg-blue-500' : 'bg-blue-600'
-        }`}>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${isDark ? 'bg-blue-500' : 'bg-blue-600'}`}>
           <User className="w-8 h-8 text-white" />
         </div>
         <div>
-          <h1 className={`text-3xl font-bold ${textClass}`}>{user.name}</h1>
+          <h1 className={`text-3xl font-bold ${textClass}`}>{displayData.name}</h1>
           <p className={`text-lg ${mutedTextClass}`}>
-            {userType === 'teacher' ? `${user.position} • ${user.department}` : `${user.major} • ${user.year}`}
+            {userType === 'teacher' ? `${displayData.year} • ${displayData.major}` : `${displayData.major} • ${displayData.year}`}
           </p>
         </div>
       </div>
@@ -85,147 +66,85 @@ export default function Profile({ isDark, userType = 'student' }) {
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-4 ${textClass}`}>Personal Information</h2>
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Mail className="w-5 h-5 text-blue-500" />
-            <div>
-              <p className={`text-sm ${mutedTextClass}`}>Email</p>
-              <p className={textClass}>{user.email}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Phone className="w-5 h-5 text-blue-500" />
-            <div>
-              <p className={`text-sm ${mutedTextClass}`}>Phone</p>
-              <p className={textClass}>{user.phone}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-blue-500" />
-            <div>
-              <p className={`text-sm ${mutedTextClass}`}>Location</p>
-              <p className={textClass}>{user.location}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 text-blue-500" />
-            <div>
-              <p className={`text-sm ${mutedTextClass}`}>Joined</p>
-              <p className={textClass}>{user.joinDate}</p>
-            </div>
-          </div>
+          <InfoItem icon={<Mail />} label="Email" value={displayData.email} {...{mutedTextClass, textClass}} />
+          <InfoItem icon={<Phone />} label="Phone" value={displayData.phone} {...{mutedTextClass, textClass}} />
+          <InfoItem icon={<MapPin />} label="Location" value={displayData.location} {...{mutedTextClass, textClass}} />
+          <InfoItem icon={<Calendar />} label="Joined" value={displayData.joinDate} {...{mutedTextClass, textClass}} />
         </div>
       </div>
 
-      {/* Academic Information */}
+      {/* Stats Section */}
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-4 ${textClass}`}>
           {userType === 'teacher' ? 'Professional Information' : 'Academic Information'}
         </h2>
         <div className="grid md:grid-cols-3 gap-4 mb-6">
-          {userType === 'teacher' ? (
-            <>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${textClass}`}>{user.experience}</p>
-                <p className={`text-sm ${mutedTextClass}`}>Experience</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${textClass}`}>{user.students}</p>
-                <p className={`text-sm ${mutedTextClass}`}>Students</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${textClass}`}>{user.position}</p>
-                <p className={`text-sm ${mutedTextClass}`}>Position</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${textClass}`}>{user.gpa}</p>
-                <p className={`text-sm ${mutedTextClass}`}>GPA</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${textClass}`}>{user.year}</p>
-                <p className={`text-sm ${mutedTextClass}`}>Year</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${textClass}`}>{user.major}</p>
-                <p className={`text-sm ${mutedTextClass}`}>Major</p>
-              </div>
-            </>
-          )}
+          <StatItem value={displayData.gpa} label={userType === 'teacher' ? 'Experience' : 'GPA'} {...{textClass, mutedTextClass}} />
+          <StatItem value={userType === 'teacher' ? displayData.students : displayData.year} label={userType === 'teacher' ? 'Students' : 'Year'} {...{textClass, mutedTextClass}} />
+          <StatItem value={displayData.major} label={userType === 'teacher' ? 'Department' : 'Major'} {...{textClass, mutedTextClass}} />
         </div>
 
         <h3 className={`text-lg font-semibold mb-3 ${textClass}`}>
           {userType === 'teacher' ? 'Current Subjects' : 'Current Courses'}
         </h3>
         <div className="space-y-3">
-          {(userType === 'teacher' ? user.subjects : user.courses).map((item, index) => (
-            <div key={index} className={`flex justify-between items-center p-3 rounded-lg ${
-              isDark ? 'bg-gray-700' : 'bg-gray-50'
-            }`}>
+          {displayData.courses.map((item, index) => (
+            <div key={index} className={`flex justify-between items-center p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
               <div className="flex items-center gap-3">
-                {userType === 'teacher' ? (
-                  <Users className="w-5 h-5 text-blue-500" />
-                ) : (
-                  <BookOpen className="w-5 h-5 text-blue-500" />
-                )}
+                {userType === 'teacher' ? <Users className="text-blue-500" /> : <BookOpen className="text-blue-500" />}
                 <div>
                   <p className={`font-medium ${textClass}`}>{item.code}</p>
                   <p className={`text-sm ${mutedTextClass}`}>{item.name}</p>
                 </div>
               </div>
-              {userType === 'teacher' ? (
-                <span className={`px-2 py-1 rounded text-sm font-medium bg-blue-100 text-blue-800`}>
-                  {item.students} students
-                </span>
-              ) : (
-                <span className={`px-2 py-1 rounded text-sm font-medium ${
-                  item.grade.startsWith('A') ? 'bg-green-100 text-green-800' :
-                  item.grade.startsWith('B') ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {item.grade}
-                </span>
-              )}
+              <span className={`px-2 py-1 rounded text-sm font-medium ${userType === 'teacher' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                {userType === 'teacher' ? `${item.students} students` : item.grade}
+              </span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Achievements */}
-      <div className={`p-6 rounded-xl border ${cardClass}`}>
-        <h2 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${textClass}`}>
-          <Award className="w-5 h-5 text-yellow-500" />
-          Achievements
-        </h2>
-        <div className="space-y-3">
-          {user.achievements.map((achievement, index) => (
-            <div key={index} className={`flex items-center gap-3 p-3 rounded-lg ${
-              isDark ? 'bg-gray-700' : 'bg-gray-50'
-            }`}>
-              <Award className="w-5 h-5 text-yellow-500" />
-              <p className={textClass}>{achievement}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Achievements & Goals */}
+      <ListSection title="Achievements" icon={<Award className="text-yellow-500" />} items={displayData.achievements} {...{cardClass, textClass, isDark}} />
+      <ListSection title={userType === 'teacher' ? 'Professional Goals' : 'Academic Goals'} icon={<Target className="text-green-500" />} items={displayData.goals} {...{cardClass, textClass, isDark}} />
+    </div>
+  );
+}
 
-      {/* Goals */}
-      <div className={`p-6 rounded-xl border ${cardClass}`}>
-        <h2 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${textClass}`}>
-          <Target className="w-5 h-5 text-green-500" />
-          {userType === 'teacher' ? 'Professional Goals' : 'Academic Goals'}
-        </h2>
-        <div className="space-y-3">
-          {user.goals.map((goal, index) => (
-            <div key={index} className={`flex items-center gap-3 p-3 rounded-lg ${
-              isDark ? 'bg-gray-700' : 'bg-gray-50'
-            }`}>
-              <Target className="w-5 h-5 text-green-500" />
-              <p className={textClass}>{goal}</p>
-            </div>
-          ))}
-        </div>
+// Internal Sub-components
+function InfoItem({ icon, label, value, mutedTextClass, textClass }) {
+  return (
+    <div className="flex items-center gap-3">
+      {React.cloneElement(icon, { className: "w-5 h-5 text-blue-500" })}
+      <div>
+        <p className={`text-sm ${mutedTextClass}`}>{label}</p>
+        <p className={textClass}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatItem({ value, label, textClass, mutedTextClass }) {
+  return (
+    <div className="text-center">
+      <p className={`text-2xl font-bold ${textClass}`}>{value}</p>
+      <p className={`text-sm ${mutedTextClass}`}>{label}</p>
+    </div>
+  );
+}
+
+function ListSection({ title, icon, items, cardClass, textClass, isDark }) {
+  return (
+    <div className={`p-6 rounded-xl border ${cardClass}`}>
+      <h2 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${textClass}`}>{icon} {title}</h2>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={index} className={`flex items-center gap-3 p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            {icon}
+            <p className={textClass}>{item}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
