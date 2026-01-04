@@ -9,7 +9,8 @@ import {
   LogOut,
   X,
   Sun,
-  Moon
+  Moon,
+  Calendar
 } from "lucide-react";
 
 export default function Sidebar({ onLogout, isDark, setIsDark, sidebarOpen, setSidebarOpen }) {
@@ -83,6 +84,10 @@ export default function Sidebar({ onLogout, isDark, setIsDark, sidebarOpen, setS
 
           <NavLink to="/analytics" className={linkClass}>
             <BarChart3 size={18} /> Analytics
+          </NavLink>
+
+          <NavLink to="/timetable" className={linkClass}>
+            <Calendar size={18} /> Timetable
           </NavLink>
 
           <NavLink to="/profile" className={linkClass}>
