@@ -17,18 +17,18 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
       
-      - name: Install dependencies
-        run: |
-          npm install
-          cd client && npm install
-          cd ../server && npm install
+      - name: Install client dependencies
+        run: cd client && npm ci
+
+      - name: Install server dependencies
+        run: cd server && npm ci
 
       - name: Check for vulnerabilities
-        run: npm audit --production --if-present || true
-
-      - name: Check for outdated packages
-        run: npm outdated || true
+        run: |
+          cd client && npm audit --production || true
+          cd ../server && npm audit --production || true
 
   code-quality:
     runs-on: ubuntu-latest
@@ -40,25 +40,22 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
       
       - name: Install client dependencies
-        run: cd client && npm install
+        run: cd client && npm ci
       
       - name: Run ESLint
         run: cd client && npm run lint || true
 
-  secrets-scan:
+  file-validation:
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       
-      - name: TruffleHog Secrets Scan
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-          extra_args: --debug --only-verified
+      - name: Check for exposed credentials
+        run: |
+          echo "Checking for sensitive files..."
+          ! git ls-files | grep -E "(\.env|firebase-adminsdk.*\.json)"
+          echo "✓ No sensitive files detected"

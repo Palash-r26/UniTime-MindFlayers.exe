@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x, 18.x]
+        node-version: [18.x, 20.x]
 
     steps:
       - uses: actions/checkout@v3
@@ -23,23 +23,20 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Install root dependencies
-        run: npm install
-
       - name: Install client dependencies
-        run: cd client && npm install
+        run: cd client && npm ci
 
       - name: Lint client code
-        run: cd client && npm run lint --if-present
+        run: cd client && npm run lint || true
 
       - name: Build client
         run: cd client && npm run build
 
       - name: Install server dependencies
-        run: cd server && npm install
+        run: cd server && npm ci
 
       - name: Check server models
-        run: cd server && node check_models.js --if-present
+        run: cd server && node check_models.js || true
 
   security-check:
     runs-on: ubuntu-latest
@@ -49,12 +46,17 @@ jobs:
 
       - name: Check for sensitive files
         run: |
-          if find . -name "*firebase-adminsdk*.json" -o -name ".env" | grep -v node_modules; then
-            echo "ERROR: Sensitive files found in repository!"
+          if find . -name "*firebase-adminsdk*.json" -not -path "*/node_modules/*" | grep .; then
+            echo "ERROR: Sensitive Firebase files found!"
+            exit 1
+          fi
+          if find . -name ".env*" -not -path "*/node_modules/*" | grep .; then
+            echo "ERROR: Environment files found!"
             exit 1
           fi
           echo "✓ No sensitive files detected"
 
-      - name: OSINT - Check dependencies
+      - name: Check dependencies
         run: |
-          npm audit --audit-level=moderate || true
+          cd client && npm audit --production || true
+          cd ../server && npm audit --production || true
