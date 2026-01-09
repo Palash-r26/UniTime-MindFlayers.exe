@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, setDoc } from "firebase/firestore"; // Added doc, setDoc
 import { 
   Calendar, Upload, Clock, MapPin, X, ChevronDown, 
   ChevronUp, FileText, Brain, Loader2, ExternalLink, Image as ImageIcon
@@ -43,7 +43,7 @@ const Timetable = ({ isDark }) => {
       formData.append("availableTime", "60");
       formData.append("studentData", JSON.stringify({ goal: "Exam Preparation" }));
 
-      const API_URL = import.meta.env.VITE_API_URL || "${API_BASE_URL}";
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
       const response = await fetch(`${API_URL}/api/analyze`, {
         method: "POST",
@@ -52,6 +52,20 @@ const Timetable = ({ isDark }) => {
 
       const data = await response.json();
       setAiPlan(data);
+
+      // --- FEED ANALYTICS DATA TO FIRESTORE ---
+      if (data.analyticsData && auth.currentUser) {
+        console.log("Updating Analytics Dashboard...", data.analyticsData);
+        try {
+            const analyticsRef = doc(db, "analytics", auth.currentUser.uid);
+            // merge: true ensures we don't overwrite other analytics fields if they exist
+            await setDoc(analyticsRef, data.analyticsData, { merge: true });
+            console.log("Analytics updated successfully!");
+        } catch (err) {
+            console.error("Failed to update analytics:", err);
+        }
+      }
+
     } catch (error) {
       console.error("Analysis Error:", error);
       alert("Analysis failed. Ensure backend is running!");

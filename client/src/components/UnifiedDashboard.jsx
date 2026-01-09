@@ -40,10 +40,11 @@ const UnifiedDashboard = ({ isDark }) => {
 
     setPlanningId(cls.id); 
     try {
-      const prompt = `My ${cls.subject} class at ${cls.time} was cancelled. I have a free hour. Suggest a short 1-line study task.`;
+      // --- UPDATED PROMPT: Specific instruction to revise notes ---
+      const prompt = `My ${cls.subject} class at ${cls.time} was cancelled. I have a free hour. Create a short, specific 1-sentence plan to revise my notes for this subject.`;
 
       // Use dynamic API URL
-      const API_URL = import.meta.env.VITE_API_URL || "${API_BASE_URL}";
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
       
       const response = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
@@ -55,7 +56,7 @@ const UnifiedDashboard = ({ isDark }) => {
 
       setAiPlans(prev => ({
         ...prev,
-        [cls.id]: data.text || "Revise notes."
+        [cls.id]: data.text || "Review your lecture notes and highlight key points."
       }));
 
     } catch (error) {
