@@ -1,0 +1,60 @@
+name: CI - Build & Test
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install client dependencies
+        run: cd client && npm install
+
+      - name: Lint client code
+        run: cd client && npm run lint --if-present
+
+      - name: Build client
+        run: cd client && npm run build
+
+      - name: Install server dependencies
+        run: cd server && npm install
+
+      - name: Check server models
+        run: cd server && node check_models.js --if-present
+
+  security-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check for sensitive files
+        run: |
+          if find . -name "*firebase-adminsdk*.json" -o -name ".env" | grep -v node_modules; then
+            echo "ERROR: Sensitive files found in repository!"
+            exit 1
+          fi
+          echo "✓ No sensitive files detected"
+
+      - name: OSINT - Check dependencies
+        run: |
+          npm audit --audit-level=moderate || true
