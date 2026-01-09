@@ -29,14 +29,12 @@ export default function Analytics({ isDark, userType = 'student' }) {
         setWeeklyData(data.weeklyProgress || []);
         setSubjectBreakdown(data.subjectBreakdown || []);
       }
-      setLoading(false);
     });
-    
     const achvQuery = query(collection(db, "achievements"), where("userId", "==", auth.currentUser.uid));
     const unsubAchv = onSnapshot(achvQuery, (snapshot) => {
       setAchievements(snapshot.docs.map(d => d.data()));
+      setLoading(false);
     });
-    
     return () => { unsubMetrics(); unsubAchv(); };
   }, [userType]);
 
@@ -50,56 +48,53 @@ export default function Analytics({ isDark, userType = 'student' }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <MetricCard icon={userType === 'teacher' ? <Users /> : <Clock />} value={metrics.totalHours} label={userType === 'teacher' ? 'Teaching Hours' : 'Estimated Study Hours'} color="text-blue-500" {...{cardClass, textClass, mutedTextClass}} />
-        <MetricCard icon={<Target />} value={metrics.productive} label={userType === 'teacher' ? 'Avg Attendance' : 'Productivity Score'} color="text-green-500" {...{cardClass, textClass, mutedTextClass}} />
+        <MetricCard icon={userType === 'teacher' ? <Users /> : <Clock />} value={metrics.totalHours} label={userType === 'teacher' ? 'Teaching Hours' : 'This Week'} color="text-blue-500" {...{cardClass, textClass, mutedTextClass}} />
+        <MetricCard icon={<Target />} value={metrics.productive} label={userType === 'teacher' ? 'Avg Attendance' : 'Productive'} color="text-green-500" {...{cardClass, textClass, mutedTextClass}} />
         <MetricCard icon={<TrendingUp />} value={metrics.streak} label={userType === 'teacher' ? 'Week Streak' : 'Day Streak'} color="text-purple-500" {...{cardClass, textClass, mutedTextClass}} />
-        <MetricCard icon={<Award />} value={metrics.sessions} label={userType === 'teacher' ? 'Classes' : 'Study Sessions'} color="text-yellow-500" {...{cardClass, textClass, mutedTextClass}} />
+        <MetricCard icon={<Award />} value={metrics.sessions} label={userType === 'teacher' ? 'Classes' : 'Sessions'} color="text-yellow-500" {...{cardClass, textClass, mutedTextClass}} />
       </div>
 
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${textClass}`}><BarChart3 className="w-5 h-5 text-blue-500" /> {userType === 'teacher' ? 'Weekly Class Attendance' : 'Weekly Study Hours'}</h2>
         <div className="space-y-4">
-          {weeklyData.length > 0 ? weeklyData.map((day, index) => (
+          {weeklyData.map((day, index) => (
             <div key={index} className="flex items-center gap-4">
               <div className={`w-12 text-sm font-medium ${textClass}`}>{day.day}</div>
               <div className="flex-1"><div className={`h-6 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'} relative overflow-hidden`}><div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${day.value}%` }}></div></div></div>
               <div className={`w-16 text-sm text-right ${textClass}`}>{userType === 'teacher' ? `${day.value}%` : `${day.hours}h`}</div>
             </div>
-          )) : <p className={`text-sm ${mutedTextClass}`}>No data available. Upload a timetable to generate stats.</p>}
+          ))}
         </div>
       </div>
 
       <div className={`p-6 rounded-xl border ${cardClass}`}>
         <h2 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${textClass}`}><PieChart className="w-5 h-5 text-green-500" /> {userType === 'teacher' ? 'Subject Performance' : 'Subject Breakdown'}</h2>
         <div className="space-y-4">
-          {subjectBreakdown.length > 0 ? subjectBreakdown.map((subject, index) => (
+          {subjectBreakdown.map((subject, index) => (
             <div key={index} className="flex items-center gap-4">
-              <div className={`w-4 h-4 rounded-full ${subject.color || 'bg-gray-400'}`}></div>
+              <div className={`w-4 h-4 rounded-full ${subject.color}`}></div>
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1"><span className={`font-medium ${textClass}`}>{subject.subject}</span><span className={`text-sm ${mutedTextClass}`}>{userType === 'teacher' ? `${subject.students} students` : `${subject.hours}h`}</span></div>
-                <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}><div className={`h-full rounded-full ${subject.color || 'bg-gray-400'} transition-all duration-500`} style={{ width: `${subject.percentage}%` }}></div></div>
+                <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}><div className={`h-full rounded-full ${subject.color} transition-all duration-500`} style={{ width: `${subject.percentage}%` }}></div></div>
               </div>
             </div>
-          )) : <p className={`text-sm ${mutedTextClass}`}>No data available.</p>}
+          ))}
         </div>
       </div>
 
-      {/* --- RECENT ACHIEVEMENTS: HIDDEN FOR TEACHERS --- */}
-      {userType !== 'teacher' && (
-        <div className={`p-6 rounded-xl border ${cardClass}`}>
-          <h2 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${textClass}`}><Award className="w-5 h-5 text-yellow-500" /> Recent Achievements</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {achievements.length > 0 ? achievements.map((achievement, index) => (
-              <div key={index} className={`flex items-start gap-4 p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <span className="text-2xl">{achievement.icon}</span>
-                <div><h3 className={`font-semibold ${textClass}`}>{achievement.title}</h3><p className={`text-sm ${mutedTextClass}`}>{achievement.description}</p></div>
-              </div>
-            )) : <p className={`text-sm ${mutedTextClass}`}>No achievements yet.</p>}
-          </div>
+      <div className={`p-6 rounded-xl border ${cardClass}`}>
+        <h2 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${textClass}`}><Award className="w-5 h-5 text-yellow-500" /> Recent Achievements</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {achievements.map((achievement, index) => (
+            <div key={index} className={`flex items-start gap-4 p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <span className="text-2xl">{achievement.icon}</span>
+              <div><h3 className={`font-semibold ${textClass}`}>{achievement.title}</h3><p className={`text-sm ${mutedTextClass}`}>{achievement.description}</p></div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* --- GOOGLE CALENDAR --- */}
+      {/* --- GOOGLE CALENDAR ADDED HERE --- */}
       <div className="mt-8">
          <h2 className={`text-xl font-semibold mb-4 ${textClass}`}>Your Schedule</h2>
          <GoogleCalendar isDark={isDark} />

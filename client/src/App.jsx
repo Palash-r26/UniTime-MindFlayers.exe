@@ -13,7 +13,7 @@ import Timetable from './components/Timetable';
 import LandingPage from './components/LandingPage';
 import Chatbot from './components/Chatbot'; 
 import { Bot, ArrowUp, X } from 'lucide-react'; 
-
+import { API_BASE_URL } from "./config";
 // Firebase Imports
 import { auth, db } from './firebase'; 
 import { onAuthStateChanged, signOut } from "firebase/auth";

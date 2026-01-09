@@ -112,7 +112,7 @@ export default function Profile({ isDark, userType = 'student' }) {
       formData.append("file", file);
 
       // 2. Send to your Backend (which handles Cloudinary)
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const API_URL = import.meta.env.VITE_API_URL || "${API_BASE_URL}";
       const response = await fetch(`${API_URL}/api/upload-profile`, {
         method: "POST",
         body: formData,

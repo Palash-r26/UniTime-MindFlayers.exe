@@ -37,12 +37,13 @@ const UnifiedDashboard = ({ isDark }) => {
 
   // --- HANDLE "PLAN NOW" CLICK ---
   const handlePlanFreeTime = async (cls) => {
+
     setPlanningId(cls.id); 
     try {
       const prompt = `My ${cls.subject} class at ${cls.time} was cancelled. I have a free hour. Suggest a short 1-line study task.`;
 
       // Use dynamic API URL
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const API_URL = import.meta.env.VITE_API_URL || "${API_BASE_URL}";
       
       const response = await fetch(`${API_URL}/api/chat`, {
         method: "POST",

@@ -43,7 +43,7 @@ const Timetable = ({ isDark }) => {
       formData.append("availableTime", "60");
       formData.append("studentData", JSON.stringify({ goal: "Exam Preparation" }));
 
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const API_URL = import.meta.env.VITE_API_URL || "${API_BASE_URL}";
 
       const response = await fetch(`${API_URL}/api/analyze`, {
         method: "POST",
