@@ -12,6 +12,24 @@ UniTime is a comprehensive full-stack web application designed to help students 
 - **Role-Based Access**: Separate dashboards for students and teachers
 - **Chatbot Support**: AI-powered chatbot for academic assistance
 - **Analytics**: Track your academic progress and time management
+  
+  ## 📸 Project Screenshots
+
+| **1. Landing Page** | **2. User Login** |
+|:---:|:---:|
+| ![Landing Page](client/src/assets/Screenshot%202026-01-10%20215249.png) | ![Login](client/src/assets/Screenshot%202026-01-10%20220037.png) |
+
+| **3. Create Account (Sign Up)** | **4. Student Dashboard** |
+|:---:|:---:|
+| ![Signup](client/src/assets/Screenshot%202026-01-10%20220051.png) | ![Student Dashboard](client/src/assets/Screenshot%202026-01-10%20220150.png) |
+
+| **5. Analytics & Progress** | **6. Timetable Management** |
+|:---:|:---:|
+| ![Analytics](client/src/assets/Screenshot%202026-01-10%20220112.png) | ![Timetable](client/src/assets/Screenshot%202026-01-10%20220136.png) |
+
+| **7. AI Chatbot Assistant** |
+|:---:|
+| ![Chatbot](client/src/assets/Screenshot%202026-01-10%20220311.png) |
 
 ## 🛠 Tech Stack
 
@@ -114,19 +132,26 @@ Before running this application, make sure you have the following installed:
 ## 📁 Project Structure
 
 ```
-UniTime-MindFlayers.exe-main/
+UniTime-MindFlayers.exe/
+├── .github/
+│   └── workflows/          # CI/CD & Code quality workflows
 ├── client/                 # React frontend
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── assets/         # Static assets
-│   │   └── firebase.js     # Firebase configuration
 │   ├── public/             # Public assets
+│   ├── src/
+│   │   ├── assets/         # Images, icons, and screenshots
+│   │   ├── components/     # React components
+│   │   ├── config.js       # App configuration
+│   │   ├── firebase.js     # Firebase configuration
+│   │   └── main.jsx        # Entry point
+│   ├── index.html
+│   ├── vite.config.js
 │   └── package.json
 ├── server/                 # Node.js backend
-│   ├── controllers/        # Route controllers
+│   ├── controllers/        # Route controllers (AI, etc.)
+│   ├── check_models.js     # Model verification script
 │   ├── index.js            # Main server file
-│   ├── package.json
-│   └── *.json              # Firebase service account key
+│   └── package.json
+├── .gitignore
 └── README.md
 ```
 
