@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { auth } from '../firebase'; 
-import { signInWithEmailAndPassword } from "firebase/auth"; 
+import { auth, db } from '../firebase'; // Imported db for role checking
+import { signInWithEmailAndPassword, signOut } from "firebase/auth"; 
+import { doc, getDoc } from "firebase/firestore"; // Imported Firestore functions
+import logo from '../assets/2.png'; // Using the Image Logo
 
 const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwitchToLanding }) => {
   const [formData, setFormData] = useState({
@@ -21,9 +23,34 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwi
     setError(''); 
 
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      console.log('Teacher logged in successfully');
-      onLogin(); 
+      // 1. Authenticate the user (Check email/password)
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      // 2. Fetch user role from Firestore (Security Check - Friend's Logic)
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+
+        // 3. VERIFY ROLE: Is this user a Teacher?
+        if (userData.role !== "teacher") {
+          // ❌ If they are NOT a teacher (e.g., Student), kick them out
+          await signOut(auth); 
+          setError("Access Denied: This login is for Teachers only.");
+          return; 
+        }
+
+        // ✅ If they ARE a teacher, proceed
+        console.log('Teacher logged in successfully');
+        onLogin(); 
+      } else {
+        // Handle case where auth works but database record is missing
+        await signOut(auth);
+        setError("User data not found in database.");
+      }
+
     } catch (err) {
       console.error('Login error:', err.message);
       setError('Invalid email or password. Please try again.');
@@ -32,16 +59,16 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwi
 
   return (
     <div className="bg-white w-[380px] max-w-[95%] px-8 py-10 rounded-xl shadow-lg text-center">
-      {/* Button removed here */}
-      <div className="flex justify-center items-center mb-2.5">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-500 rounded-lg flex justify-center items-center text-xl text-white shadow-md">
-          U
-        </div>
+      
+      {/* REPLACED GRADIENT LOGO WITH IMAGE LOGO */}
+      <div className="flex justify-center items-center mb-6">
+        <img src={logo} alt="UniTime" className="h-14 object-contain rounded-lg" />
       </div>
+
       <h2 className="text-xl font-bold text-gray-600 mb-1.25">Teacher Login</h2>
       <p className="text-gray-600 text-sm mb-6.25">Log in to access your dashboard</p>
 
-      <form id="helpseekerLoginForm" onSubmit={handleSubmit}>
+      <form id="teacherLoginForm" onSubmit={handleSubmit}>
         <div className="text-left mb-3.75">
           <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-1.5">Email</label>
           <input 

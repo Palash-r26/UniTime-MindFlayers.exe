@@ -1,6 +1,7 @@
+import React from 'react';
 import { NavLink, useNavigate } from "react-router-dom";
-import { auth } from "../firebase"; // Ensure this path correctly points to your firebase.js
-import { signOut } from "firebase/auth"; //
+import { auth } from "../firebase"; 
+import { signOut } from "firebase/auth"; 
 import {
   LayoutDashboard,
   BarChart3,
@@ -12,6 +13,10 @@ import {
   Moon,
   Calendar
 } from "lucide-react";
+
+// IMPORT IMAGES HERE
+import logoLight from '../assets/2.png'; // White background logo for Light Mode
+import logoDark from '../assets/3.png';  // Dark background logo for Dark Mode
 
 export default function Sidebar({ onLogout, isDark, setIsDark, sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
@@ -54,9 +59,16 @@ export default function Sidebar({ onLogout, isDark, setIsDark, sidebarOpen, setS
 
         {/* Header with close button */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            UniTime
-          </h1>
+          
+          {/* LOGO REPLACEMENT - Adjusted height to fix "tiny" issue */}
+          <div className="flex items-center gap-2">
+            <img 
+              src={isDark ? logoDark : logoLight} 
+              alt="UniTime Logo" 
+              className="h-10 w-auto object-contain" 
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsDark(!isDark)}

@@ -1,8 +1,12 @@
 // client/src/config.js
 
-const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+// This logic automatically switches between Localhost and your Live Server
+const getApiUrl = () => {
+  if (window.location.hostname === "localhost") {
+    return "http://localhost:5000"; 
+  }
+  // Replace this with your actual Render/Vercel backend URL if you have one
+  return "https://unitime.onrender.com"; 
+};
 
-// Agar localhost hai toh local server, nahi toh Render server
-export const API_BASE_URL = isLocal 
-  ? "http://localhost:5000" 
-  : "https://unitime.onrender.com"; // Yahan apna Render URL daalo
+export const API_BASE_URL = getApiUrl();

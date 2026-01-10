@@ -16,6 +16,10 @@ import {
   MapPin
 } from "lucide-react";
 
+// IMPORT IMAGES
+import logoScrolled from '../assets/2.png'; // White background optimized (Photo 2)
+import logoHero from '../assets/3.png';     // Dark background optimized (Photo 3)
+
 const LandingPage = ({ onSwitchToStudentLogin, onSwitchToTeacherLogin, onSwitchToSignup }) => {
   const [scrolled, setScrolled] = useState(false);
 
@@ -38,18 +42,13 @@ const LandingPage = ({ onSwitchToStudentLogin, onSwitchToTeacherLogin, onSwitchT
         }`}
       >
         <div className="container mx-auto px-6 flex justify-between items-center">
-          {/* LOGO */}
+          {/* LOGO IMAGE LOGIC */}
           <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
-            <span
-              className={`text-xl font-bold transition-colors ${
-                scrolled ? "text-slate-900" : "text-white"
-              }`}
-            >
-              UniTime
-            </span>
+            <img 
+              src={scrolled ? logoScrolled : logoHero} 
+              alt="UniTime" 
+              className="h-10 w-auto object-contain transition-all duration-300"
+            />
           </div>
 
           {/* DESKTOP LINKS */}
@@ -100,7 +99,7 @@ const LandingPage = ({ onSwitchToStudentLogin, onSwitchToTeacherLogin, onSwitchT
             </span>
           </h1>
           <p className="text-slate-300 text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
-            UniTime helps students manage classes, assignments, and deadlines —
+            UniTime helps students manage classes, assignments, and deadlines -
             all in one powerful dashboard.
           </p>
 
@@ -176,7 +175,7 @@ const LandingPage = ({ onSwitchToStudentLogin, onSwitchToTeacherLogin, onSwitchT
           <h2 className="text-3xl md:text-4xl font-bold mb-6 text-slate-900">Why UniTime?</h2>
           <p className="text-slate-600 text-lg leading-relaxed mb-8">
             UniTime was created to solve real problems faced by university
-            students — missed deadlines, poor time management, and scattered
+            students - missed deadlines, poor time management, and scattered
             tools. Our mission is simple: give students clarity, control, and
             confidence.
           </p>
@@ -190,10 +189,7 @@ const LandingPage = ({ onSwitchToStudentLogin, onSwitchToTeacherLogin, onSwitchT
             {/* Column 1: Brand */}
             <div>
                 <div className="flex items-center gap-2 mb-4">
-                    <div className="bg-indigo-600 p-1.5 rounded-lg">
-                        <Calendar className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-2xl font-bold text-white">UniTime</span>
+                    <img src={logoHero} alt="UniTime" className="h-8" />
                 </div>
                 <p className="text-slate-400 mb-6">
                     Empowering students to organize, plan, and succeed in their academic journey.

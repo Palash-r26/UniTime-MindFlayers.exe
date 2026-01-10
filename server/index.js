@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { v2: cloudinary } = require('cloudinary');
 const { Readable } = require('stream');
 
-// --- 1. ROBUST PDF LIBRARY LOADING ---
+// --- 1. ROBUST PDF LIBRARY LOADING (Your Code) ---
 let pdfParseLib;
 try {
     pdfParseLib = require('pdf-parse');
@@ -31,8 +31,27 @@ cloudinary.config({
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// --- CORS CONFIGURATION (Loose for Hackathon/Demos) ---
+const allowedOrigins = [
+  "http://localhost:5173", 
+  "https://unitime-win.vercel.app", 
+  "https://unitime.onrender.com"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      // Allow it anyway to prevent demo fails
+      return callback(null, true); 
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 // Middleware - INCREASE LIMIT for images
-app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -59,7 +78,7 @@ const uploadToCloudinary = (buffer, mimetype, folder = "unitime_uploads") => {
     });
 };
 
-// --- 2. INTELLIGENT AI ANALYSIS FUNCTION ---
+// --- 2. INTELLIGENT AI ANALYSIS FUNCTION (Your FULL Logic) ---
 async function analyzeWithAI(fileBuffer, mimetype, availableTime, studentData) {
     if (!process.env.GEMINI_API_KEY) {
         throw new Error("Missing GEMINI_API_KEY in .env file");
@@ -155,7 +174,7 @@ async function analyzeWithAI(fileBuffer, mimetype, availableTime, studentData) {
     
     promptParts.push(textPrompt);
 
-    // --- TRY MODELS ---
+    // --- TRY MODELS (Your Robust Fallback Loop) ---
     const candidates = [
         "gemini-2.0-flash-lite", 
         "gemini-2.5-flash",
@@ -207,7 +226,7 @@ app.post('/api/upload-profile', upload.single('file'), async (req, res) => {
     }
 });
 
-// --- ANALYZE ROUTE ---
+// --- ANALYZE ROUTE (Uses Your Intelligent Logic) ---
 app.post('/api/analyze', upload.single('file'), async (req, res) => {
     try {
         console.log(`📥 Analyze Request: ${req.file ? req.file.mimetype : "No File"}`);
@@ -252,20 +271,45 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
     }
 });
 
-// --- CHAT ROUTE ---
-app.post('/api/chat', async (req, res) => {
+// --- CHAT ROUTE (Uses Friend's STATIC Logic as Requested) ---
+app.post('/api/chat', (req, res) => {
     try {
         const { prompt } = req.body;
         if (!prompt) return res.status(400).json({ error: "No prompt provided" });
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" }); 
-        
-        const result = await model.generateContent(prompt);
-        res.json({ text: result.response.text() });
+        const lowerInput = prompt.toLowerCase().trim();
+        console.log("💬 User asked (Static Mode):", lowerInput);
+
+        let reply = "";
+
+        // --- 🤖 DEMO LOGIC (If-Else Magic) ---
+        if (["hi", "hello", "hey", "hii", "hello!"].some(word => lowerInput.includes(word))) {
+            reply = "Hello, I am UniTime AI. How may I help you optimize your schedule today?";
+        } 
+        else if (lowerInput.includes("who are you") || lowerInput.includes("what is unitime")) {
+            reply = "I am UniTime AI, a smart assistant designed to help students and teachers manage their time, fill gaps, and boost productivity.";
+        } 
+        else if (lowerInput.includes("help") || lowerInput.includes("features")) {
+            reply = "I can help you with:\n1. Analyzing your timetable 📅\n2. Suggesting study plans 📚\n3. Tracking your productivity 📈";
+        } 
+        else if (lowerInput.includes("plan") || lowerInput.includes("study")) {
+            reply = "Sure! I can create a study plan for you. I see you have a free slot at 2 PM. Shall we schedule a revision session?";
+        } 
+        else if (lowerInput.includes("cancel") || lowerInput.includes("gap")) {
+            reply = "Got a free slot? Great! I recommend using this time for a quick revision of your last lecture.";
+        } 
+        else {
+            reply = "That sounds interesting! Could you upload your schedule so I can give you a better recommendation?";
+        }
+
+        // Fake Delay to look like AI
+        setTimeout(() => {
+            res.json({ text: reply });
+        }, 800);
+
     } catch (error) {
-        console.error("Chat Error:", error.message);
-        res.status(500).json({ error: "Chat failed" });
+        console.error("Chat Error:", error);
+        res.json({ text: "Hello! I am UniTime AI. How may I help you?" });
     }
 });
 
