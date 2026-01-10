@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { db, auth } from "../firebase";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-// Removed Firebase Storage imports to fix CORS issue
+// IMPORTANT: Import the API_BASE_URL configuration
+import { API_BASE_URL } from "../config"; 
+
 import { 
   User, Mail, Phone, MapPin, Calendar, 
   BookOpen, Award, Target, Users,
@@ -47,6 +49,7 @@ export default function Profile({ isDark, userType = 'student' }) {
 
   const handleEditToggle = () => {
     if (isEditing) {
+      // Reset form to current user data if cancelling
       setEditForm({
         name: user.name || "",
         phone: user.phone || "",
@@ -95,11 +98,12 @@ export default function Profile({ isDark, userType = 'student' }) {
     }
   };
 
-  // --- UPDATED IMAGE UPLOAD FUNCTION (Uses Cloudinary via Backend) ---
+  // --- FIXED IMAGE UPLOAD FUNCTION ---
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Size Validation (5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("File size must be less than 5MB");
       return;
@@ -111,14 +115,15 @@ export default function Profile({ isDark, userType = 'student' }) {
       const formData = new FormData();
       formData.append("file", file);
 
-      // 2. Send to your Backend (which handles Cloudinary)
-      const API_URL = import.meta.env.VITE_API_URL || "${API_BASE_URL}";
-      const response = await fetch(`${API_URL}/api/upload-profile`, {
+      // 2. Send to Backend (Uses the imported API_BASE_URL)
+      const response = await fetch(`${API_BASE_URL}/api/upload-profile`, {
         method: "POST",
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Upload failed on server");
+      if (!response.ok) {
+        throw new Error("Upload failed on server");
+      }
 
       const data = await response.json();
       const photoURL = data.url;
@@ -128,7 +133,7 @@ export default function Profile({ isDark, userType = 'student' }) {
       
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload profile picture. Check server console.");
+      alert("Failed to upload profile picture. Make sure the server is running.");
     } finally {
       setUploadingImg(false);
       if(fileInputRef.current) fileInputRef.current.value = ""; // Reset input

@@ -51,13 +51,13 @@ Before running this application, make sure you have the following installed:
 2. **Install server dependencies:**
    ```bash
    cd server
-   npm install
+   npm install @google/generative-ai axios cloudinary cors dotenv express firebase-admin multer nodemon pdf-parse
    ```
 
 3. **Install client dependencies:**
    ```bash
    cd ../client
-   npm install
+   npm install @google/generative-ai @tailwindcss/vite firebase gapi-script lucide-react react react-dom react-router-dom tailwindcss
    ```
 
 4. **Set up environment variables:**
@@ -84,7 +84,7 @@ Before running this application, make sure you have the following installed:
 1. **Start the backend server:**
    ```bash
    cd server
-   npm start
+   node index.js
    # or for development with auto-reload:
    npx nodemon index.js
    ```
