@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { auth, db } from '../firebase'; // Imported db for role checking
+import { auth, db } from '../firebase'; 
 import { signInWithEmailAndPassword, signOut } from "firebase/auth"; 
-import { doc, getDoc } from "firebase/firestore"; // Imported Firestore functions
-import logo from '../assets/2.png'; // Using the Image Logo
+import { doc, getDoc } from "firebase/firestore"; 
+import logo from '../assets/4.png'; 
 
 const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwitchToLanding }) => {
   const [formData, setFormData] = useState({
@@ -23,11 +23,11 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwi
     setError(''); 
 
     try {
-      // 1. Authenticate the user (Check email/password)
+      // 1. Authenticate the user
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      // 2. Fetch user role from Firestore (Security Check - Friend's Logic)
+      // 2. Fetch user role from Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -36,17 +36,14 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwi
 
         // 3. VERIFY ROLE: Is this user a Teacher?
         if (userData.role !== "teacher") {
-          // ❌ If they are NOT a teacher (e.g., Student), kick them out
           await signOut(auth); 
           setError("Access Denied: This login is for Teachers only.");
           return; 
         }
 
-        // ✅ If they ARE a teacher, proceed
         console.log('Teacher logged in successfully');
         onLogin(); 
       } else {
-        // Handle case where auth works but database record is missing
         await signOut(auth);
         setError("User data not found in database.");
       }
@@ -60,7 +57,6 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwi
   return (
     <div className="bg-white w-[380px] max-w-[95%] px-8 py-10 rounded-xl shadow-lg text-center">
       
-      {/* REPLACED GRADIENT LOGO WITH IMAGE LOGO */}
       <div className="flex justify-center items-center mb-6">
         <img src={logo} alt="UniTime" className="h-14 object-contain rounded-lg" />
       </div>
@@ -98,18 +94,18 @@ const TeacherLogin = ({ onLogin, onSwitchToSignup, onSwitchToStudentLogin, onSwi
 
         <button 
           type="submit" 
-          className="w-full py-3 bg-blue-600 border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-blue-700 hover:shadow-[0_6px_15px_rgba(37,99,235,0.2)]"
+          className="w-full py-3 bg-[#012f7b] border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-[#01235a] hover:shadow-[0_6px_15px_rgba(1,47,123,0.2)]"
         >
           Login
         </button>
       </form>
 
       <div className="mt-6.25 text-sm text-gray-800 pt-5 border-t border-gray-200">
-        Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToSignup(); }} className="text-emerald-500 font-semibold no-underline hover:underline">Sign Up</a>
+        Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToSignup(); }} className="text-[#7457d8] font-semibold no-underline hover:underline">Sign Up</a>
       </div>
 
       <div className="mt-5 text-sm text-gray-800">
-        Are you a student? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToStudentLogin(); }} className="text-blue-600 font-semibold no-underline mx-1.25 hover:text-emerald-500">Login as Student</a>
+        Are you a student? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToStudentLogin(); }} className="text-blue-600 font-semibold no-underline mx-1.25 hover:text-[#7457d8]">Login as Student</a>
       </div>
     </div>
   );

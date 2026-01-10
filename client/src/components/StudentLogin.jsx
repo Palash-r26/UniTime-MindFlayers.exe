@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase'; 
 import { signInWithEmailAndPassword, signOut } from "firebase/auth"; 
-import { doc, getDoc } from "firebase/firestore"; // Added Firestore imports for role check
-import logo from '../assets/2.png'; // Using the Image Logo as requested
+import { doc, getDoc } from "firebase/firestore"; 
+import logo from '../assets/4.png'; 
 
 const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin, onSwitchToLanding }) => {
   const [formData, setFormData] = useState({
@@ -29,7 +29,7 @@ const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin, onSwi
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      // 2. Fetch user role from Firestore (Friend's Logic)
+      // 2. Fetch user role from Firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -38,17 +38,14 @@ const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin, onSwi
 
         // 3. SECURITY CHECK: Is this user a Student?
         if (userData.role !== "student") {
-          // ❌ If they are NOT a student (e.g., they are a Teacher)
-          await signOut(auth); // Force logout immediately
+          await signOut(auth);
           setError("Access Denied: This account is for Teachers only.");
-          return; // Stop here
+          return;
         }
 
-        // ✅ If they ARE a student, proceed
         console.log('Student logged in successfully');
         onLogin(); 
       } else {
-        // Handle edge case where account exists but no database record found
         await signOut(auth);
         setError("User profile not found in database.");
       }
@@ -62,7 +59,6 @@ const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin, onSwi
   return (
     <div className="bg-white w-[380px] max-w-[95%] px-8 py-10 rounded-xl shadow-lg text-center">
       
-      {/* REPLACED GRADIENT LOGO WITH IMAGE LOGO (2.png) */}
       <div className="flex justify-center items-center mb-6">
         <img src={logo} alt="UniTime" className="h-14 object-contain rounded-lg" />
       </div>
@@ -109,23 +105,23 @@ const StudentLogin = ({ onLogin, onSwitchToSignup, onSwitchToTeacherLogin, onSwi
               className="m-0 w-auto" 
             /> Remember me
           </label>
-          <a href="#" className="text-blue-600 hover:underline">Forgot password?</a>
+          <a href="#" className="text-[#7457d8] hover:underline">Forgot password?</a>
         </div>
 
         <button 
           type="submit" 
-          className="w-full py-3 bg-blue-600 border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-blue-700 hover:shadow-[0_6px_15px_rgba(37,99,235,0.2)]"
+          className="w-full py-3 bg-[#012f7b] border-none text-white rounded-lg font-semibold text-base cursor-pointer transition-all hover:bg-[#01235a] hover:shadow-[0_6px_15px_rgba(1,47,123,0.2)]"
         >
           Login
         </button>
       </form>
 
       <div className="mt-6.25 text-sm text-gray-800 pt-5 border-t border-gray-200">
-        Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToSignup(); }} className="text-emerald-500 font-semibold no-underline hover:underline">Sign Up</a>
+        Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToSignup(); }} className="text-[#7457d8] font-semibold no-underline hover:underline">Sign Up</a>
       </div>
 
       <div className="mt-5 text-sm text-gray-800">
-        Are you a Teacher? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToTeacherLogin(); }} className="text-blue-600 font-semibold no-underline mx-1.25 hover:text-emerald-500">Login as Teacher</a>
+        Are you a Teacher? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToTeacherLogin(); }} className="text-blue-600 font-semibold no-underline mx-1.25 hover:text-[#7457d8]">Login as Teacher</a>
       </div>
     </div>
   );

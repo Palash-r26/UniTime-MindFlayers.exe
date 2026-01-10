@@ -3,6 +3,7 @@ import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from "firebase/auth"; 
 import { doc, setDoc } from "firebase/firestore"; 
 import { Loader2 } from "lucide-react";
+import logo from '../assets/4.png'; 
 
 const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
   const [formData, setFormData] = useState({
@@ -46,7 +47,6 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
       const user = userCredential.user;
 
       // 2. Initialize User Profile in Firestore
-      // We set default values here to prevent "undefined" errors in Profile/Settings
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         name: formData.name,
@@ -58,7 +58,7 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
         major: "",
         year: "",
         gpa: "",
-        photoURL: null, // Important for the profile picture logic
+        photoURL: null, 
         achievements: [],
         goals: []
       });
@@ -84,7 +84,6 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
       setIsError(false);
       setMessage('Account created successfully!');
       
-      // Optional: Auto-redirect after delay
       setTimeout(() => {
          onSwitchToLogin(formData.role);
       }, 1500);
@@ -100,11 +99,11 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
 
   return (
     <div className="bg-white w-[380px] max-w-[95%] px-8 py-10 rounded-xl shadow-lg text-center">
-      <div className="flex justify-center items-center mb-4">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-teal-500 rounded-lg flex justify-center items-center text-xl text-white shadow-md">
-          U
-        </div>
+      
+      <div className="flex justify-center items-center mb-6">
+        <img src={logo} alt="UniTime" className="h-14 object-contain rounded-lg" />
       </div>
+
       <h2 className="text-xl font-bold text-gray-600 mb-2">Create Account</h2>
       <p className="text-gray-600 text-sm mb-6">Join UniTime to start</p>
 
@@ -158,7 +157,7 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
         <div className="text-left">
           <label className="block text-sm font-semibold text-gray-800 mb-2">Select Role</label>
           <div className="grid grid-cols-2 gap-4">
-            <label className={`cursor-pointer border-2 rounded-lg p-2 flex items-center justify-center gap-2 transition-all ${formData.role === 'student' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'}`}>
+            <label className={`cursor-pointer border-2 rounded-lg p-2 flex items-center justify-center gap-2 transition-all ${formData.role === 'student' ? 'border-[#7457d8] bg-blue-50 text-[#012f7b]' : 'border-gray-200 hover:border-gray-300'}`}>
               <input 
                 type="radio" 
                 name="role" 
@@ -169,7 +168,7 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
               /> 
               <span className="font-medium text-sm">Student</span>
             </label>
-            <label className={`cursor-pointer border-2 rounded-lg p-2 flex items-center justify-center gap-2 transition-all ${formData.role === 'teacher' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'}`}>
+            <label className={`cursor-pointer border-2 rounded-lg p-2 flex items-center justify-center gap-2 transition-all ${formData.role === 'teacher' ? 'border-[#7457d8] bg-blue-50 text-[#012f7b]' : 'border-gray-200 hover:border-gray-300'}`}>
               <input 
                 type="radio" 
                 name="role" 
@@ -184,7 +183,7 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
         </div>
 
         <div 
-          className={`text-sm text-center font-medium ${isError ? 'text-red-500' : 'text-green-600'}`} 
+          className={`text-sm text-center font-medium ${isError ? 'text-red-500' : 'text-[#7457d8]'}`} 
           style={{ display: message ? 'block' : 'none' }}
         >
           {message}
@@ -193,7 +192,7 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
         <button 
           type="submit" 
           disabled={loading}
-          className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold text-base transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+          className="w-full py-3 bg-[#012f7b] hover:bg-[#01235a] text-white rounded-lg font-semibold text-base transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
         >
           {loading && <Loader2 className="animate-spin w-5 h-5" />}
           {loading ? "Creating Account..." : "Create Account"}
@@ -201,7 +200,7 @@ const Signup = ({ onSwitchToLogin, onSwitchToLanding }) => {
       </form>
 
       <div className="mt-6 text-sm text-gray-600 pt-5 border-t border-gray-200">
-        Already have an account? <button onClick={() => onSwitchToLogin('student')} className="text-emerald-500 font-semibold hover:underline bg-transparent border-none cursor-pointer">Login</button>
+        Already have an account? <button onClick={() => onSwitchToLogin('student')} className="text-[#7457d8] font-semibold hover:underline bg-transparent border-none cursor-pointer">Login</button>
       </div>
     </div>
   );
