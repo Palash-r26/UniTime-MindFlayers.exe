@@ -6,66 +6,66 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { v2: cloudinary } = require('cloudinary');
 const { Readable } = require('stream');
 
-// --- 1. ROBUST PDF LIBRARY LOADING (Your Code) ---
+// 1. PDF library loading
 let pdfParseLib;
 try {
     pdfParseLib = require('pdf-parse');
 } catch (e) {
-    console.warn("⚠️ Warning: 'pdf-parse' not found. PDF reading will be skipped.");
+    console.warn("Warning: 'pdf-parse' not found. PDF reading will be skipped.");
 }
-const pdfParse = (pdfParseLib && typeof pdfParseLib === 'function') 
-    ? pdfParseLib 
-    : (pdfParseLib && pdfParseLib.default) 
-        ? pdfParseLib.default 
+const pdfParse = (pdfParseLib && typeof pdfParseLib === 'function')
+    ? pdfParseLib
+    : (pdfParseLib && pdfParseLib.default)
+        ? pdfParseLib.default
         : null;
 
 dotenv.config();
 
-// --- CLOUDINARY CONFIGURATION ---
-cloudinary.config({ 
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-    api_key: process.env.CLOUDINARY_API_KEY, 
-    api_secret: process.env.CLOUDINARY_API_SECRET 
+// Cloudinary Configuration
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- CORS CONFIGURATION (Loose for Hackathon/Demos) ---
+// CORS Configuration
 const allowedOrigins = [
-  "http://localhost:5173", 
-  "https://unitime-win.vercel.app", 
-  "https://unitime.onrender.com"
+    "http://localhost:5173",
+    "https://unitime-win.vercel.app",
+    "https://unitime.onrender.com"
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      // Allow it anyway to prevent demo fails
-      return callback(null, true); 
-    }
-    return callback(null, true);
-  },
-  credentials: true
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            // Allow it anyway to prevent demo fails
+            return callback(null, true);
+        }
+        return callback(null, true);
+    },
+    credentials: true
 }));
 
-// Middleware - INCREASE LIMIT for images
+// Middleware - Increase limit for images
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Memory Storage for File Uploads
-const upload = multer({ 
+const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// --- HELPER: UPLOAD BUFFER TO CLOUDINARY ---
+// Helper: Upload buffer to Cloudinary
 const uploadToCloudinary = (buffer, mimetype, folder = "unitime_uploads") => {
     return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-            { 
+            {
                 resource_type: "auto",
                 folder: folder
             },
@@ -78,22 +78,21 @@ const uploadToCloudinary = (buffer, mimetype, folder = "unitime_uploads") => {
     });
 };
 
-// --- 2. INTELLIGENT AI ANALYSIS FUNCTION (Your FULL Logic) ---
+// 2. Intelligent AI Analysis Function
 async function analyzeWithAI(fileBuffer, mimetype, availableTime, studentData) {
     if (!process.env.GEMINI_API_KEY) {
         throw new Error("Missing GEMINI_API_KEY in .env file");
     }
-    
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-    // --- PREPARE PROMPT PARTS ---
+
+    // Prepare prompt parts
     let promptParts = [];
     let fileContextMsg = "No file uploaded.";
 
-    // A. HANDLE IMAGES (PNG, JPG, JPEG)
     if (fileBuffer && mimetype.startsWith('image/')) {
-        console.log(`📸 Processing Image: ${mimetype} (${fileBuffer.length} bytes)`);
-        
+        console.log(`Processing Image: ${mimetype} (${fileBuffer.length} bytes)`);
+
         const imagePart = {
             inlineData: {
                 data: fileBuffer.toString('base64'),
@@ -102,32 +101,32 @@ async function analyzeWithAI(fileBuffer, mimetype, availableTime, studentData) {
         };
         promptParts.push(imagePart);
         fileContextMsg = "Image of schedule provided.";
-    } 
-    // B. HANDLE PDF (Extract Text)
+    }
+    // Handle PDF (Extract Text)
     else if (fileBuffer && mimetype === 'application/pdf') {
         try {
             if (!pdfParse) {
                 fileContextMsg = "PDF content skipped (Library missing).";
             } else {
                 const pdfData = await pdfParse(fileBuffer);
-                const text = (pdfData.text || "").slice(0, 10000); 
+                const text = (pdfData.text || "").slice(0, 10000);
                 promptParts.push(text);
-                console.log(`✅ Extracted ${text.length} characters from PDF.`);
+                console.log(`Extracted ${text.length} characters from PDF.`);
                 fileContextMsg = "PDF Text content provided.";
             }
         } catch (error) {
-            console.warn("⚠️ PDF Read Error:", error.message);
+            console.warn("PDF Read Error:", error.message);
             fileContextMsg = "Error reading PDF file.";
         }
     }
-    // C. HANDLE TEXT FILES
+    // Handle Text Files
     else if (fileBuffer) {
         const text = fileBuffer.toString('utf-8').slice(0, 10000);
         promptParts.push(text);
         fileContextMsg = "Text file content provided.";
     }
 
-    // --- ADD INSTRUCTIONS TO PROMPT ---
+    // Add instructions to prompt
     const textPrompt = `
         Act as an expert academic planner.
         
@@ -171,76 +170,75 @@ async function analyzeWithAI(fileBuffer, mimetype, availableTime, studentData) {
           }
         }
     `;
-    
+
     promptParts.push(textPrompt);
 
-    // --- TRY MODELS (Your Robust Fallback Loop) ---
+    // Try models
+    // Valid stable models: gemini-2.5-flash, gemini-2.5-flash-lite
     const candidates = [
-        "gemini-2.0-flash-lite", 
-        "gemini-2.5-flash",
-        "gemini-flash-latest",
-        "gemini-pro-vision"
+        "gemini-2.5-flash",        // Stable, fast, production-ready
+        "gemini-2.5-flash-lite"    // Stable, faster, cost-efficient
     ];
 
     for (const modelName of candidates) {
         try {
-            console.log(`🤖 Attempting AI Model: ${modelName}...`);
+            console.log(`Attempting AI Model: ${modelName}...`);
             const model = genAI.getGenerativeModel({ model: modelName });
-            
+
             const result = await model.generateContent(promptParts);
             const response = await result.response;
-            
+
             const cleanText = response.text().replace(/```json|```/g, '').trim();
             return JSON.parse(cleanText);
 
         } catch (error) {
             if (error.message.includes('429')) {
-                console.warn(`⏳ Quota exceeded for ${modelName}. Switching...`);
+                console.warn(`Quota exceeded for ${modelName}. Switching...`);
             } else if (error.message.includes('404') || error.message.includes('not found')) {
-                console.log(`🔹 Model ${modelName} not available, switching...`);
+                console.log(`Model ${modelName} not available, switching...`);
             } else {
-                console.warn(`❌ Error with ${modelName}:`, error.message.split('[')[0]);
+                console.warn(`Error with ${modelName}:`, error.message.split('[')[0]);
             }
         }
     }
     throw new Error("All AI models failed. Please wait 60 seconds or check API Quota.");
 }
 
-// --- ROUTES ---
+// Routes
 
-app.get('/', (req, res) => res.send("✅ UniTime Server is Running!"));
+app.get('/', (req, res) => res.send("UniTime Server is Running!"));
 
-// --- PROFILE PICTURE UPLOAD ROUTE ---
+// Profile Picture Upload Route
 app.post('/api/upload-profile', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file provided" });
-        
-        console.log("📸 Uploading Profile Picture...");
+
+        console.log("Uploading Profile Picture...");
         const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype, "unitime_profiles");
-        
-        console.log("✅ Profile Upload Success:", result.secure_url);
+
+        console.log("Profile Upload Success:", result.secure_url);
         res.json({ url: result.secure_url });
     } catch (error) {
-        console.error("❌ Profile Upload Error:", error);
+        console.error("Profile Upload Error:", error);
         res.status(500).json({ error: "Upload failed" });
     }
 });
 
-// --- ANALYZE ROUTE (Uses Your Intelligent Logic) ---
+// Analyze Route
 app.post('/api/analyze', upload.single('file'), async (req, res) => {
     try {
-        console.log(`📥 Analyze Request: ${req.file ? req.file.mimetype : "No File"}`);
-        
+        console.log(`Analyze Request: ${req.file ? req.file.mimetype : "No File"}`);
+
         let cloudinaryResult = null;
-        
+
         // 1. Upload to Cloudinary (if file exists)
         if (req.file) {
-            console.log("☁️ Uploading to Cloudinary...");
+            console.log("Uploading to Cloudinary...");
             try {
                 cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
-                console.log("✅ Cloudinary Upload Success:", cloudinaryResult.secure_url);
+                console.log("Cloudinary Upload Success:", cloudinaryResult.secure_url);
             } catch (uploadError) {
-                console.error("❌ Cloudinary Upload Failed:", uploadError);
+                console.error("Cloudinary Upload Failed:", uploadError);
             }
         }
 
@@ -251,7 +249,7 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
             req.body.availableTime || 60,
             req.body.studentData
         );
-        
+
         // 3. Combine Results
         const finalResponse = {
             ...aiResult,
@@ -259,45 +257,45 @@ app.post('/api/analyze', upload.single('file'), async (req, res) => {
             fileId: cloudinaryResult ? cloudinaryResult.public_id : null
         };
 
-        console.log("✅ Analysis Successful");
+        console.log("Analysis Successful");
         res.json(finalResponse);
 
     } catch (error) {
-        console.error("🔥 Analysis Failed:", error.message);
-        res.status(500).json({ 
-            error: "Analysis Failed", 
-            details: error.message 
+        console.error("Analysis Failed:", error.message);
+        res.status(500).json({
+            error: "Analysis Failed",
+            details: error.message
         });
     }
 });
 
-// --- CHAT ROUTE (Uses Friend's STATIC Logic as Requested) ---
+// Chat Route
 app.post('/api/chat', (req, res) => {
     try {
         const { prompt } = req.body;
         if (!prompt) return res.status(400).json({ error: "No prompt provided" });
 
         const lowerInput = prompt.toLowerCase().trim();
-        console.log("💬 User asked (Static Mode):", lowerInput);
+        console.log("User asked:", lowerInput);
 
         let reply = "";
 
-        // --- 🤖 DEMO LOGIC (If-Else Magic) ---
+        // Demo Logic
         if (["hi", "hello", "hey", "hii", "hello!"].some(word => lowerInput.includes(word))) {
             reply = "Hello, I am UniTime AI. How may I help you optimize your schedule today?";
-        } 
+        }
         else if (lowerInput.includes("who are you") || lowerInput.includes("what is unitime")) {
             reply = "I am UniTime AI, a smart assistant designed to help students and teachers manage their time, fill gaps, and boost productivity.";
-        } 
+        }
         else if (lowerInput.includes("help") || lowerInput.includes("features")) {
-            reply = "I can help you with:\n1. Analyzing your timetable 📅\n2. Suggesting study plans 📚\n3. Tracking your productivity 📈";
-        } 
+            reply = "I can help you with:\n1. Analyzing your timetable\n2. Suggesting study plans\n3. Tracking your productivity";
+        }
         else if (lowerInput.includes("plan") || lowerInput.includes("study")) {
             reply = "Sure! I can create a study plan for you. I see you have a free slot at 2 PM. Shall we schedule a revision session?";
-        } 
+        }
         else if (lowerInput.includes("cancel") || lowerInput.includes("gap")) {
             reply = "Got a free slot? Great! I recommend using this time for a quick revision of your last lecture.";
-        } 
+        }
         else {
             reply = "That sounds interesting! Could you upload your schedule so I can give you a better recommendation?";
         }
@@ -314,5 +312,5 @@ app.post('/api/chat', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
