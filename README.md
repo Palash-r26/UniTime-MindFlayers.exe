@@ -37,18 +37,18 @@ UniTime is a comprehensive full-stack web application designed to help students 
 - **Automated Study Plans**: AI generates optimal study schedules based on your free time and academic gaps
   
   ## 📸 Project Screenshots
-
+  
 | **1. Landing Page** | **2. User Login** |
 |:---:|:---:|
-| ![Landing Page](client/src/assets/Screenshot%202026-01-10%20215249.png) | ![Login](client/src/assets/Screenshot%202026-01-17%144111.png) |
+| ![Landing Page](client/src/assets/Screenshot%202026-01-10%20215249.png) | ![Login](client/src/assets/Screenshot%202026-01-17%20144111.png) |
 
 | **3. Create Account (Sign Up)** | **4. Student Dashboard** |
 |:---:|:---:|
-| ![Signup](client/src/assets/Screenshot%202026-01-10%20220051.png) | ![Student Dashboard](client/src/assets/Screenshot%202026-01-17%144041.png) |
+| ![Signup](client/src/assets/Screenshot%202026-01-10%20220051.png) | ![Student Dashboard](client/src/assets/Screenshot%202026-01-17%20144041.png) |
 
 | **5. Analytics & Progress** | **6. Timetable Management** |
 |:---:|:---:|
-| ![Analytics](client/src/assets/Screenshot%202026-01-17%144925.png) | ![Timetable](client/src/assets/Screenshot%202026-01-17%134108.png) |
+| ![Analytics](client/src/assets/Screenshot%202026-01-17%20144925.png) | ![Timetable](client/src/assets/Screenshot%202026-01-17%20134108.png) |
 
 | **7. AI Chatbot Assistant** |
 |:---:|
