@@ -47,7 +47,7 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
     // 1. Calculate productive time percentage
     const freeTimeSlots = detectFreeTime(classes || []);
     const totalFreeTimeMinutes = freeTimeSlots.reduce((sum, slot) => sum + slot.freeTimeDuration, 0);
-    
+
     // Calculate study sessions that occurred during free time
     const productiveMinutes = sessions.reduce((sum, session) => {
       if (!session.timestamp) return sum;
@@ -62,13 +62,27 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
       return wasDuringFreeTime ? sum + (session.durationMinutes || 0) : sum;
     }, 0);
 
-    const productivePercentage = totalFreeTimeMinutes > 0
-      ? Math.round((productiveMinutes / totalFreeTimeMinutes) * 100)
-      : 0;
+    const productivePercentage = Math.round((productiveMinutes / (24 * 60)) * 100);
 
     // 2. Calculate gaps closed
-    const gaps = await analyzeAcademicGaps(null, assignments || [], classes || [], quizScores || []);
-    const closedGaps = sessions.filter(s => s.gapClosed).length;
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const todayDay = days[new Date().getDay()];
+
+    // Total cancelled classes for TODAY
+    const totalDailyGaps = (classes || []).filter(c =>
+      c.isCancelled && c.day === todayDay
+    ).length;
+
+    // Unique closed gaps for TODAY
+    const todaySessions = sessions.filter(s => {
+      if (!s.timestamp) return false;
+      const d = new Date(s.timestamp?.seconds ? s.timestamp.seconds * 1000 : s.timestamp);
+      return d.toDateString() === new Date().toDateString();
+    });
+
+    const uniqueClosedGaps = new Set(
+      todaySessions.filter(s => s.gapClosed).map(s => s.relatedClassId || s.subject)
+    ).size;
 
     // 3. Calculate study streaks
     const { dailyStreak, weeklyStreak } = calculateStreaks(sessions);
@@ -81,7 +95,7 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
 
     setMetrics({
       productiveTimePercentage: productivePercentage,
-      gapsClosed: closedGaps,
+      gapsClosed: uniqueClosedGaps,
       dailyStreak,
       weeklyStreak,
       weeklyImprovement: improvement,
@@ -97,7 +111,7 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const datesWithSessions = new Set(
       sessions.map(s => {
         const date = new Date(s.timestamp?.seconds * 1000 || s.timestamp);
@@ -204,7 +218,7 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
     sessions.forEach(session => {
       if (!session.timestamp) return;
       try {
-        const sessionDate = session.timestamp?.seconds 
+        const sessionDate = session.timestamp?.seconds
           ? new Date(session.timestamp.seconds * 1000)
           : new Date(session.timestamp);
         const dateStr = sessionDate.toISOString().split('T')[0];
@@ -270,7 +284,7 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
           </div>
           <p className={`text-2xl font-bold ${theme.text}`}>{metrics.productiveTimePercentage}%</p>
           <p className={`text-xs ${theme.muted}`}>
-            {Math.round(metrics.freeTimeUtilized / 60)}h / {Math.round(metrics.totalFreeTime / 60)}h
+            {Math.round(metrics.freeTimeUtilized / 60)}h / 24h
           </p>
         </div>
 
@@ -302,46 +316,7 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
         </div>
       </div>
 
-      {/* Weekly Progress Chart */}
-      <div className="mb-6">
-        <h3 className={`font-semibold mb-4 ${theme.text}`}>Weekly Progress</h3>
-        <div className="flex items-end gap-2 h-32">
-          {weeklyProgress && weeklyProgress.length > 0 ? weeklyProgress.map((day, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center gap-2">
-              <div className="relative w-full h-24 flex items-end justify-center">
-                <div
-                  className={`w-full max-w-[40px] rounded-t transition-all ${
-                    parseFloat(day.hours || 0) > 0
-                      ? isDark ? 'bg-indigo-600' : 'bg-indigo-500'
-                      : isDark ? 'bg-gray-700' : 'bg-gray-200'
-                  }`}
-                  style={{ 
-                    height: parseFloat(day.hours || 0) > 0 
-                      ? `${Math.min((parseFloat(day.hours) / 6) * 100, 100)}%` 
-                      : '4px',
-                    minHeight: '4px'
-                  }}
-                  title={`${parseFloat(day.hours || 0).toFixed(1)}h on ${day.day}`}
-                >
-                  {day.gapsClosed > 0 && (
-                    <div className="absolute -top-2 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
-                      {day.gapsClosed}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="text-xs text-center w-full">
-                <p className={`font-semibold ${theme.text}`}>{day.day}</p>
-                <p className={theme.muted}>{parseFloat(day.hours || 0).toFixed(1)}h</p>
-              </div>
-            </div>
-          )) : (
-            <div className={`w-full text-center py-8 ${theme.muted}`}>
-              <p className="text-sm">No progress data available</p>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Weekly Progress Removed */}
 
       {/* Academic Growth Indicator */}
       <div className={`p-4 rounded-lg border ${isDark ? 'bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border-indigo-700' : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200'}`}>
@@ -352,8 +327,8 @@ const LearningContinuityDashboard = ({ isDark, classes, assignments, quizScores 
               {metrics.weeklyImprovement > 0
                 ? `You're improving! ${metrics.weeklyImprovement}% more productive than last week.`
                 : metrics.weeklyImprovement < 0
-                ? `Down ${Math.abs(metrics.weeklyImprovement)}% from last week. Keep going!`
-                : 'Maintaining consistent progress.'}
+                  ? `Down ${Math.abs(metrics.weeklyImprovement)}% from last week. Keep going!`
+                  : 'Maintaining consistent progress.'}
             </p>
           </div>
           <Award className={`w-8 h-8 ${metrics.weeklyImprovement > 0 ? 'text-yellow-500' : theme.muted}`} />

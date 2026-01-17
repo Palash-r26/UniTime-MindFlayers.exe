@@ -27,6 +27,49 @@ const UnifiedDashboard = ({ isDark }) => {
   // New State for "Plan Now" Feature
   const [planningId, setPlanningId] = useState(null);
   const [aiPlans, setAiPlans] = useState({});
+  const [focusSubject, setFocusSubject] = useState(null);
+  const [focusClass, setFocusClass] = useState(null);
+  const [closedGapSubjects, setClosedGapSubjects] = useState([]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const q = query(
+      collection(db, "study_sessions"),
+      where("userId", "==", auth.currentUser.uid),
+      where("gapClosed", "==", true),
+      where("timestamp", ">=", startOfDay)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const subjects = snapshot.docs.map(doc => doc.data().subject);
+      setClosedGapSubjects(subjects);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleGapClose = (cls) => {
+    // Check if gap is already closed
+    const isClosed = closedGapSubjects.some(closedSub =>
+      (closedSub && cls.subject && closedSub.includes(cls.subject)) ||
+      (closedSub && cls.subject && cls.subject.includes(closedSub))
+    );
+
+    if (isClosed) {
+      alert("Gap already filled! You have utilized this free time.");
+      return;
+    }
+
+    alert("To delete the subject you need to cover the gap, go to focus timer.");
+    setFocusSubject(cls.subject);
+    setFocusClass(cls);
+    const timerElement = document.getElementById('focus-timer-section');
+    if (timerElement) {
+      timerElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   // State for Add Score Modal
   const [showScoreModal, setShowScoreModal] = useState(false);
@@ -123,15 +166,20 @@ const UnifiedDashboard = ({ isDark }) => {
       setUpcomingClasses(unique);
 
       // Recalculate metrics
-      const cancelledCount = unique.filter(c => c.isCancelled).length;
-      setMetrics(prev => ({
-        ...prev,
-        active: unique.length - cancelledCount,
-        cancelled: cancelledCount
-      }));
+      // Filter out closed gaps for metrics and free time slots
+      const activeCancelled = unique.filter(c => {
+        if (!c.isCancelled) return false;
+        // Check against CURRENT closedGapSubjects state is risky inside this closure if not careful.
+        // However, this runs on updateClasses. 
+        // BETTER APPROACH: We need to re-run this logic when closedGapSubjects changes too.
+        // But `updateClasses` is inside the useEffect dependency closure of the onSnapshot.
 
-      setFreeTimeSlots(unique.filter(c => c.isCancelled));
-      setCurrentFreeTime(getCurrentFreeTime(unique));
+        // Temporary fix: We will do the filtering in the RENDER logic or valid Effect.
+        // Actually, let's move the metric calculation to a separate useEffect that depends on [upcomingClasses, closedGapSubjects].
+        return true;
+      });
+
+      setUpcomingClasses(unique);
       setLoading(false);
     };
 
@@ -183,7 +231,40 @@ const UnifiedDashboard = ({ isDark }) => {
     };
 
     if (!loading) runAnalysis();
+    if (!loading) runAnalysis();
   }, [assignments, upcomingClasses, quizScores, loading]);
+
+  // RECALCULATE METRICS & FREE TIME (Filtering Closed Gaps)
+  // This ensures the "Free Time Found" count reduces when gaps are closed,
+  // even though the main cards remain visible (as they are rendered from 'upcomingClasses' directly).
+  useEffect(() => {
+    if (loading) return;
+
+    // Filter out closed gaps for the COUNT and Smart Slots
+    const openCancelledClasses = upcomingClasses.filter(c => {
+      if (!c.isCancelled) return false;
+
+      const isClosed = closedGapSubjects.some(closedSub =>
+        (closedSub && c.subject && closedSub.includes(c.subject)) ||
+        (closedSub && c.subject && c.subject.includes(closedSub))
+      );
+      return !isClosed;
+    });
+
+    setMetrics(prev => ({
+      ...prev,
+      active: upcomingClasses.length - upcomingClasses.filter(c => c.isCancelled).length,
+      cancelled: upcomingClasses.filter(c => c.isCancelled).length, // Total cancelled (visible)
+      // Note: If you want 'active' to reflect strictly study-able classes, this is fine.
+    }));
+
+    // Free Time Slots = Only OPEN gaps
+    setFreeTimeSlots(openCancelledClasses);
+    setCurrentFreeTime(getCurrentFreeTime(openCancelledClasses));
+
+  }, [upcomingClasses, closedGapSubjects, loading]);
+
+
 
   const handleAddScore = async (e) => {
     e.preventDefault();
@@ -341,18 +422,8 @@ const UnifiedDashboard = ({ isDark }) => {
         )}
 
         {/* --- METRICS & KPI --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className={`p-5 rounded-xl border shadow-sm transition-all hover:shadow-md ${card}`}>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-indigo-500/10 text-indigo-500 rounded-lg">
-                <BookOpen size={20} />
-              </div>
-              <span className={`text-sm font-medium ${textSecondary}`}>Learning Gaps</span>
-            </div>
-            <p className={`text-2xl font-bold ${textPrimary}`}>
-              {metrics.gaps} <span className="text-sm font-normal opacity-60">identified</span>
-            </p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Learning Gaps Removed */}
 
           <div className={`p-5 rounded-xl border shadow-sm transition-all hover:shadow-md ${card}`}>
             <div className="flex items-center gap-3 mb-2">
@@ -433,14 +504,23 @@ const UnifiedDashboard = ({ isDark }) => {
                               <p className={`text-xs mt-0.5 ${textSecondary}`}>Use this {cls.time} slot wisely?</p>
                             </div>
                           </div>
-                          <button
-                            onClick={() => handlePlanFreeTime(cls)}
-                            disabled={planningId === cls.id}
-                            className="text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-sm hover:shadow-md disabled:opacity-50"
-                          >
-                            {planningId === cls.id ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
-                            Plan Now
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleGapClose(cls)}
+                              className={`p-2 rounded-lg border transition-all ${isDark ? 'border-red-800 bg-red-900/20 text-red-400 hover:bg-red-900/40' : 'border-red-100 bg-white text-red-500 hover:bg-red-50'}`}
+                              title="Close Gap (Delete Cancellation)"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                            </button>
+                            <button
+                              onClick={() => handlePlanFreeTime(cls)}
+                              disabled={planningId === cls.id}
+                              className="text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-sm hover:shadow-md disabled:opacity-50"
+                            >
+                              {planningId === cls.id ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                              Plan Now
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -650,12 +730,12 @@ const UnifiedDashboard = ({ isDark }) => {
 
 
         {/* --- FOCUS TIMER --- */}
-        <div className="mt-8 p-1 rounded-xl" style={{
+        <div id="focus-timer-section" className="mt-8 p-1 rounded-xl" style={{
           background: 'linear-gradient(to right, #4f46e5, #9333ea)',
           padding: '2px'
         }}>
           <div className={`rounded-xl overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
-            <FocusTimer isDark={isDark} />
+            <FocusTimer isDark={isDark} preSelectedSubject={focusSubject} preSelectedClass={focusClass} />
           </div>
         </div>
 

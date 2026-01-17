@@ -46,13 +46,54 @@ export default function Analytics({ isDark, userType = 'student' }) {
   useEffect(() => {
     if (!auth.currentUser || userType !== 'student') return;
 
-    const classesQuery = query(
+    // 1. Personal Classes
+    const qPersonal = query(
       collection(db, "timetable"),
       where("userId", "==", auth.currentUser.uid)
     );
-    const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
-      const classData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClasses(classData);
+
+    // 2. Teacher Classes (Replicating UnifiedDashboard logic)
+    const qTeacher = query(
+      collection(db, "timetable"),
+      where("teacherId", ">=", " ")
+    );
+
+    let personalData = [];
+    let teacherData = [];
+
+    const updateClasses = () => {
+      // Merge logic: Teacher classes > Personal classes (simplified for Analytics)
+      // We really just need the COUNT of cancelled classes for today.
+      // So a simple concatenation is a good start, but deduplication helps accuracy.
+
+      const merged = [...personalData, ...teacherData];
+
+      // Deduplication (simplified version of UnifiedDashboard)
+      const uniqueMap = new Map();
+      merged.forEach(cls => {
+        // Key: Day + Time
+        const key = `${cls.day}-${cls.time}`;
+        if (uniqueMap.has(key)) {
+          const existing = uniqueMap.get(key);
+          if (cls.teacherId && !existing.teacherId) {
+            uniqueMap.set(key, cls); // Prefer teacher class
+          }
+        } else {
+          uniqueMap.set(key, cls);
+        }
+      });
+
+      setClasses(Array.from(uniqueMap.values()));
+    };
+
+    const unsubscribeClasses = onSnapshot(qPersonal, (snapshot) => {
+      personalData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateClasses();
+    });
+
+    const unsubscribeTeacher = onSnapshot(qTeacher, (snapshot) => {
+      teacherData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateClasses();
     });
 
     const assignmentsQuery = query(
@@ -66,6 +107,7 @@ export default function Analytics({ isDark, userType = 'student' }) {
 
     return () => {
       unsubscribeClasses();
+      unsubscribeTeacher();
       unsubscribeAssignments();
     };
   }, [userType]);
@@ -250,6 +292,7 @@ export default function Analytics({ isDark, userType = 'student' }) {
         />
       )}
 
+      {/* Peer Collaboration - Real Time Online Users */}
       {/* Peer Collaboration - Real Time Online Users */}
       {userType === 'student' && (
         <PeerCollaboration

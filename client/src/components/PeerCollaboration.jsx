@@ -243,7 +243,7 @@ const PeerCollaboration = ({ isDark, classes }) => {
       ) : (
         <div className={`rounded-xl border ${theme.card} overflow-hidden`}>
           <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-            <h3 className={`font-bold text-lg ${theme.text}`}>Available Students</h3>
+            <h3 className={`font-bold text-lg ${theme.text}`}>Available User</h3>
             <p className={`text-xs ${theme.muted}`}>{matches.length} students active now</p>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-700">

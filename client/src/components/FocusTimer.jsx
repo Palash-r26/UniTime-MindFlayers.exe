@@ -4,23 +4,33 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from "firebase/firestore";
 import { isValidSubject, getDisplayName } from "../utils/subjectUtils";
 
-const FocusTimer = ({ isDark }) => {
+const FocusTimer = ({ isDark, preSelectedSubject, preSelectedClass }) => {
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(preSelectedSubject || "");
   const [isSaving, setIsSaving] = useState(false);
   const [subjects, setSubjects] = useState([]);
 
-  // Fetch subjects from Timetable
+  // React to prop change
+  useEffect(() => {
+    if (preSelectedSubject) {
+      setSubject(preSelectedSubject);
+    }
+  }, [preSelectedSubject]);
+
+  const [activeGapClass, setActiveGapClass] = useState(null);
+  const [classes, setClasses] = useState([]);
+
+  // Fetch subjects AND full class details from Timetable
   useEffect(() => {
     if (!auth.currentUser) return;
     const q = query(collection(db, "timetable"), where("userId", "==", auth.currentUser.uid));
 
-
-
-    // ... inside effect ...
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedSubjects = snapshot.docs.map(doc => doc.data().subject);
+      const fetchedClasses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClasses(fetchedClasses);
+
+      const fetchedSubjects = fetchedClasses.map(c => c.subject);
 
       // INLINED HELPER
       const getCode = (str) => {
@@ -70,7 +80,10 @@ const FocusTimer = ({ isDark }) => {
       setSubjects(uniqueSubjects.length > 0 ? uniqueSubjects : ["General Study"]);
 
       if (!subject && uniqueSubjects.length > 0) {
-        setSubject(uniqueSubjects[0]);
+        // Don't auto-select here to avoid overriding user choice if they switch tabs
+        // setSubject(uniqueSubjects[0]); 
+        // Logic kept simple: default to first only if empty
+        if (!subject) setSubject(uniqueSubjects[0]);
       } else if (!subject) {
         setSubject("General Study");
       }
@@ -78,6 +91,59 @@ const FocusTimer = ({ isDark }) => {
 
     return () => unsubscribe();
   }, []);
+
+
+  // Check for active gaps (Cancelled class NOW matching selected subject)
+  useEffect(() => {
+    const checkGap = () => {
+      // 1. Forced Active Class (User logic: "Delete" -> "Cover Gap" intent)
+      if (preSelectedClass && subject === preSelectedClass.subject) {
+        setActiveGapClass(preSelectedClass);
+        return;
+      }
+
+      if (!subject || classes.length === 0) {
+        setActiveGapClass(null);
+        return;
+      }
+
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      // Find if selected subject matches a cancelled class happening right now
+      const match = classes.find(cls => {
+        if (!cls.isCancelled) return false;
+
+        // Subject Match (Loose)
+        const subjectMatch =
+          (cls.subject && subject.includes(cls.subject)) ||
+          (subject && subject.includes(cls.subject)); // Basic inclusion check
+
+        // Time Match
+        // Assuming cls.time is "HH:MM AM/PM" start time. 
+        // Use a standard duration, e.g., 60 mins if end time missing.
+        if (!cls.time) return false;
+
+        const [timePart, period] = cls.time.split(' ');
+        const [h, m] = timePart.split(':').map(Number);
+        let startMins = h * 60 + (m || 0);
+        if (period === 'PM' && h !== 12) startMins += 12 * 60;
+        if (period === 'AM' && h === 12) startMins = 0;
+
+        // Assume 50 min duration for class
+        const endMins = startMins + 50;
+
+        return subjectMatch && currentMinutes >= startMins && currentMinutes <= endMins;
+      });
+
+      setActiveGapClass(match || null);
+    };
+
+    const interval = setInterval(checkGap, 10000); // Check every 10s
+    checkGap(); // Initial check
+
+    return () => clearInterval(interval);
+  }, [subject, classes, preSelectedClass]);
 
   useEffect(() => {
     let interval;
@@ -123,10 +189,13 @@ const FocusTimer = ({ isDark }) => {
         subject: subject,
         durationMinutes: Math.max(1, Math.floor(time / 60)),
         timestamp: serverTimestamp(),
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        gapClosed: !!activeGapClass, // Mark as closing a gap if active
+        relatedClassId: activeGapClass ? activeGapClass.id : null
       });
       setTime(0);
       setIsRunning(false);
+      if (activeGapClass) alert("Gap Closed! Great job utilizing this free time.");
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -186,9 +255,13 @@ const FocusTimer = ({ isDark }) => {
           {!isRunning ? (
             <button
               onClick={() => setIsRunning(true)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold shadow-md shadow-indigo-500/20 transition-all hover:-translate-y-0.5"
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md transition-all hover:-translate-y-0.5 ${activeGapClass
+                ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/20'
+                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'
+                }`}
             >
-              <Play className="w-5 h-5 fill-current" /> Start
+              <Play className="w-5 h-5 fill-current" />
+              {activeGapClass ? "Close Gap" : "Start"}
             </button>
           ) : (
             <button
